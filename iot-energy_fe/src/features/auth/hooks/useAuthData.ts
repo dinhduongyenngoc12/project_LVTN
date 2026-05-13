@@ -42,6 +42,7 @@ export function useOTPData() {
                     token: data.token,
                     username: data.user.username,
                     email: data.user.email,
+                    role: data.user.role ?? null,
                 });
 
                 setRefreshToken(data.refresh);

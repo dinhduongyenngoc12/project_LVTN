@@ -1,19 +1,28 @@
 import { createBrowserRouter } from "react-router-dom";
 import LoginPage from "../../features/auth/pages/LoginPage";
-import HomePage from "../../features/main/pages/HomePage";
 import DevicePage from "../../features/main/pages/DevicePage";
 import RegisterPage from "../../features/auth/pages/RegisterPage";
 import OTPPage from "../../features/auth/pages/OTPPage";
 import PublicRoute from "../../guard/PublicRoute";
 import ProtectedRoute from "../../guard/ProtectedRoute";
 import OtpGuard from "../../guard/OtpGuard";
+import AdminDashboardPage from "../../features/admin/pages/AdminDashboardPage";
+import AdminRoute from "./index_role";
 
 export const router = createBrowserRouter([
   {
     path: "/",
     element:
       <ProtectedRoute>
-        <HomePage />
+        <AdminRoute />
+      </ProtectedRoute>
+  },
+
+  {
+    path: "/admin",
+    element:
+      <ProtectedRoute requireAdmin>
+        <AdminDashboardPage />
       </ProtectedRoute>
   },
 

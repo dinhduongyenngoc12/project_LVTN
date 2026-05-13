@@ -13,6 +13,7 @@ import {
     useRegisterData,
     useResendOTPData,
 } from "./useAuthData";
+import { getDefaultRouteByRole } from "../../../app/utils/auth";
 
 type ApiErrorResponse = {
     message?: string;
@@ -105,15 +106,15 @@ export function useOTPForm() {
 
                         clearOtpData();
 
-                        navigate("/", {
+                        navigate(getDefaultRouteByRole(data?.user?.role), {
                             replace: true,
                         });
                     } else {
-                        setMsg(data?.message || "OTP không hợp lệ hoặc hết hạn");
+                        setMsg(data?.message || "OTP không hợp lệ hoặc đã hết hạn");
                     }
                 },
                 onError: (error) => {
-                    setMsg(getApiErrorMessage(error, "OTP không hợp lệ hoặc hết hạn"));
+                    setMsg(getApiErrorMessage(error, "OTP không hợp lệ hoặc đã hết hạn"));
                 },
             },
         );

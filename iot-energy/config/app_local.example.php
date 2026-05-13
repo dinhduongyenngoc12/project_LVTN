@@ -86,10 +86,17 @@ return [
      */
     'EmailTransport' => [
         'default' => [
-            'host' => 'localhost',
-            'port' => 25,
-            'username' => null,
-            'password' => null,
+    //         'host' => 'localhost',
+    //         'port' => 25,
+    //         'username' => null,
+    //         'password' => null,
+    //         'client' => null,
+    //         'url' => env('EMAIL_TRANSPORT_DEFAULT_URL', null),
+            'className' => 'Smtp',
+            'host'      => 'ssl://mail.teamsolutions.vn',
+            'port'      => 465,
+            'username'  => 'ngocddy@teamsolutions.vn',
+            'password' => '8a57acYu3',
             'client' => null,
             'url' => env('EMAIL_TRANSPORT_DEFAULT_URL', null),
         ],

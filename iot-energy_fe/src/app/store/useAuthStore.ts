@@ -7,7 +7,8 @@ type LoginProps = {
     token: string | null;
     username: string | null;
     email: string | null;
-    setAuthLogin: (data: { token: string; username: string; email: string }) => void;
+    role: string | null;
+    setAuthLogin: (data: { token: string; username: string; email: string; role?: string | null }) => void;
     clearAuthLogin: () => void;
 };
 
@@ -17,12 +18,14 @@ export const useAuthLoginStore = create<LoginProps>()(
             token: null,
             username: null,
             email: null,
+            role: null,
 
             setAuthLogin: (data) =>
                 set({
                     token: data.token,
                     username: data.username,
                     email: data.email,
+                    role: data.role ?? null,
                 }),
 
             clearAuthLogin: () =>
@@ -30,6 +33,7 @@ export const useAuthLoginStore = create<LoginProps>()(
                     token: null,
                     username: null,
                     email: null,
+                    role: null,
                 }),
         }),
         {

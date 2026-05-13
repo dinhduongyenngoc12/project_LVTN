@@ -1,8 +1,12 @@
 import { useEffect, useState } from "react";
+import { NavLink } from "react-router-dom";
+import { useLogoutForm } from "../../auth/hooks/useAuthForm";
 import {
     getDevicesApi,
     getEnergyLogsApi,
+    getMeApi,
     getThresholdsApi,
+    type UserProfile,
 } from "../../services/HomeService";
 import {
     buildDashboardDevices,
@@ -10,15 +14,13 @@ import {
     formatPower,
     type DashboardDevice,
 } from "../utils/homeDashboard";
-import { NavLink } from "react-router-dom";
-import { useLogoutForm } from "../../auth/hooks/useAuthForm";
 
 const menuItems = [
     { label: "Trang chủ", path: "/" },
     { label: "Thiết bị", path: "/devices" },
     { label: "Lịch sử điện năng", path: "/energy-history" },
     { label: "Cảnh báo", path: "/alerts" },
-    { label: "Cài đặt Ngưỡng", path: "/threshold-settings" },
+    { label: "Cài đặt ngưỡng", path: "/threshold-settings" },
 ];
 
 function getMenuItemClass(isActive: boolean) {
@@ -33,8 +35,22 @@ function getMenuItemClass(isActive: boolean) {
     return commonClass + " " + normalClass;
 }
 
+function normalizeId(value: unknown): number | null {
+    if (typeof value === "number" && Number.isFinite(value)) {
+        return value;
+    }
+
+    if (typeof value === "string" && value.trim() !== "") {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : null;
+    }
+
+    return null;
+}
+
 export default function DevicePage() {
     const { handleLogout } = useLogoutForm();
+    const [, setUser] = useState<UserProfile | null>(null);
     const [devices, setDevices] = useState<DashboardDevice[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -47,24 +63,49 @@ export default function DevicePage() {
             setError("");
 
             try {
-                const [devicesData, energyLogsData, thresholdsData] = await Promise.all([
+                const [meData, devicesData, energyLogsData, thresholdsData] = await Promise.all([
+                    getMeApi(),
                     getDevicesApi(),
                     getEnergyLogsApi(),
                     getThresholdsApi(),
                 ]);
 
-                if (!isMounted) return;
+                if (!isMounted) {
+                    return;
+                }
+
+                const currentUserId = normalizeId(meData.user?.id);
+                const scopedDevices = (devicesData.devices ?? []).filter(
+                    (device) => currentUserId !== null && normalizeId(device.user_id) === currentUserId,
+                );
+                const deviceIds = new Set(
+                    scopedDevices
+                        .map((device) => normalizeId(device.id ?? device.pk))
+                        .filter((deviceId): deviceId is number => deviceId !== null),
+                );
+                const scopedEnergyLogs = (energyLogsData.energyLogs ?? []).filter((log) => {
+                    const deviceId = normalizeId(log.device_id);
+                    return deviceId !== null && deviceIds.has(deviceId);
+                });
+                const scopedThresholds = (thresholdsData.thresholds ?? []).filter((threshold) => {
+                    const deviceId = normalizeId(threshold.device_id);
+                    return deviceId !== null && deviceIds.has(deviceId);
+                });
 
                 const dashboardDevices = buildDashboardDevices(
-                    devicesData.devices ?? [],
-                    energyLogsData.energyLogs ?? [],
-                    thresholdsData.thresholds ?? [],
+                    scopedDevices,
+                    scopedEnergyLogs,
+                    scopedThresholds,
                 );
 
+                setUser(meData.user ?? null);
                 setDevices(dashboardDevices);
-            } catch (err) {
-                if (!isMounted) return;
+            } catch {
+                if (!isMounted) {
+                    return;
+                }
 
+                setUser(null);
                 setError("Không thể tải danh sách thiết bị. Vui lòng thử lại!");
                 setDevices([]);
             } finally {
@@ -74,7 +115,7 @@ export default function DevicePage() {
             }
         };
 
-        fetchDeviceData();
+        void fetchDeviceData();
 
         return () => {
             isMounted = false;
@@ -115,11 +156,13 @@ export default function DevicePage() {
                         <button
                             type="button"
                             onClick={handleLogout}
-                            className="inline-flex items-center justify-center rounded-2xl border border-red-300/30 bg-white/10 px-4 py-3 text-sm font-semibold text-red transition hover:bg-red-500/90">
+                            className="inline-flex items-center justify-center rounded-2xl border border-red-300/30 bg-white/10 px-4 py-3 text-sm font-semibold text-red transition hover:bg-red-500/90"
+                        >
                             Đăng xuất
                         </button>
                     </nav>
                 </aside>
+
                 <main className="flex-1">
                     <header className="rounded-[32px] border border-white/70 bg-slate-950 px-6 py-6 text-white shadow-2xl shadow-slate-900/10 sm:px-8">
                         <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
@@ -134,7 +177,7 @@ export default function DevicePage() {
                         </div>
                     </header>
 
-                    <section className="rounded-[32px] border border-white/70 bg-white/90 p-6 shadow-2xl shadow-slate-900/5 backdrop-blur mt-6 grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+                    <section className="mt-6 grid gap-6 rounded-[32px] border border-white/70 bg-white/90 p-6 shadow-2xl shadow-slate-900/5 backdrop-blur xl:grid-cols-[1.15fr_0.85fr]">
                         {loading ? (
                             <p className="text-sm text-slate-500">Đang tải dữ liệu thiết bị...</p>
                         ) : error ? (
@@ -163,10 +206,11 @@ export default function DevicePage() {
                                             Cập nhật lúc: {formatDateTime(device.lastUpdated)}
                                         </p>
                                         <p
-                                            className={`mt-3 inline-flex rounded-full px-3 py-1 text-xs font-semibold ${device.isOverThreshold
-                                                ? "bg-rose-100 text-rose-700"
-                                                : "bg-emerald-100 text-emerald-700"
-                                                }`}
+                                            className={`mt-3 inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+                                                device.isOverThreshold
+                                                    ? "bg-rose-100 text-rose-700"
+                                                    : "bg-emerald-100 text-emerald-700"
+                                            }`}
                                         >
                                             {device.isOverThreshold ? "Vượt ngưỡng" : "Bình thường"}
                                         </p>
@@ -174,7 +218,6 @@ export default function DevicePage() {
                                 ))}
                             </div>
                         )}
-
                     </section>
                 </main>
             </div>

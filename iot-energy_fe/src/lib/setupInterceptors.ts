@@ -4,14 +4,15 @@ import { axiosRefresh } from "./axiosRefresh";
 import { useAuthLoginStore, useAuthOTPStore, useOtpData, useRefreshTokenStore } from "../app/store/useAuthStore";
 
 type FailedQueueItem = {
-    resolve: (token: string) => void;
+    resolve: (token: string) => void;      
     reject: (error: unknown) => void;
 };
 
-let isRefreshing = false;
+//dung let thay vi const vi bien con can gan lai (thay doi tham chieu)
+let isRefreshing = false;                                  
 let failedQueue: FailedQueueItem[] = [];
 
-function processQueue(error: unknown, token: string | null = null) {
+function processQueue(error: unknown, token: string | null = null) {              //chong refresh token storm
     failedQueue.forEach((promise) => {
         if (error) {
             promise.reject(error);
@@ -41,7 +42,7 @@ export function setupInterceptors() {
             const token = useAuthLoginStore.getState().token;
 
             if (token) {
-                config.headers.Authorization = `Bearer ${token}`;
+                config.headers.Authorization = "Bearer " + token;
             }
 
             return config;
@@ -60,7 +61,7 @@ export function setupInterceptors() {
                 return Promise.reject(error);
             }
 
-            // tránh loop vô hạn
+            //tranh loop vo han
             if (originalRequest._retry) {
                 clearAllAuth();
                 window.location.href = "/login";
@@ -75,20 +76,20 @@ export function setupInterceptors() {
                 return Promise.reject(error);
             }
 
-            //không refresh cho chính API refresh
+            //khong refresh cho chinh API refresh
             if (originalRequest.url?.includes("/auth/refresh")) {
                 clearAllAuth();
                 window.location.href = "/login";
                 return Promise.reject(error);
             }
 
-            //nếu đang refresh rồi thì xếp hàng chờ
+            //neu dang refresh roi thi xep hang cho
             if (isRefreshing) {
                 return new Promise((resolve, reject) => {
                     failedQueue.push({
                         resolve: (newToken: string) => {
                             if (originalRequest.headers) {
-                                originalRequest.headers.Authorization = `Bearer ${newToken}`;
+                                originalRequest.headers.Authorization = "Bearer " + newToken;
                             }
                             resolve(axiosClient(originalRequest));
                         },
@@ -113,24 +114,26 @@ export function setupInterceptors() {
                     throw new Error("Không lấy được token mới");
                 }
 
-                //cập nhật access token mới
+                //update access token moi
                 const currentUsername = useAuthLoginStore.getState().username;
                 const currentEmail = useAuthLoginStore.getState().email;
+                const currentRole = useAuthLoginStore.getState().role;
 
                 useAuthLoginStore.getState().setAuthLogin({                    //refresh chi doi access token
                     token: newToken,
                     username: currentUsername ?? "",
                     email: currentEmail ?? "",
+                    role: currentRole,
                 });
 
 
-                //cập nhật refresh token mới nếu có
+                //update refresh token neuco
                 useRefreshTokenStore.getState().setRefreshToken(newRefreshToken);
 
                 processQueue(null, newToken);
 
                 if (originalRequest.headers) {
-                    originalRequest.headers.Authorization = `Bearer ${newToken}`;
+                    originalRequest.headers.Authorization = "Bearer " + newToken;
                 }
 
                 return axiosClient(originalRequest);

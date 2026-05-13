@@ -12,6 +12,11 @@ export type MeResponse = {
     user: UserProfile;
 };
 
+export type UsersResponse = {
+    status: string;
+    totalUsers: number;
+};
+
 export type DeviceItem = {
     pk?: number;
     id?: number;
@@ -63,6 +68,11 @@ export type ThresholdsResponse = {
 
 export async function getMeApi(): Promise<MeResponse> {
     const response = await getData<MeResponse>("/api/auth/me");
+    return response.data;
+}
+
+export async function getUsersApi(): Promise<UsersResponse> {
+    const response = await getData<UsersResponse>("/api/users");
     return response.data;
 }
 

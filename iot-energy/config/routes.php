@@ -17,11 +17,14 @@ return function (RouteBuilder $routes): void {
             $builder->connect('/logout', ['controller' => 'Users', 'action' => 'logout'], ['_method' => 'POST']);
             $builder->connect('/me', ['controller' => 'Users', 'action' => 'me'], ['_method' => 'GET']);
             $builder->connect('/refresh', ['controller' => 'Users', 'action' => 'refresh'], ['_method' => 'POST']);
-            $builder->connect(
-                '/social/google',
+            $builder->connect('/social/google/callback',
                 ['controller' => 'Users', 'action' => 'socialLogin', 'provider' => 'google'],
-                ['pass' => ['provider']]           //
+                ['pass' => ['provider']]           
             );
+        });
+
+        $builder->scope('/users', ['prefix' => 'Api'], function (RouteBuilder $builder): void {
+            $builder->connect('', ['controller' => 'Users', 'action' => 'index'], ['_method' => 'GET']);
         });
 
         $builder->scope('/devices', ['prefix' => 'Api'], function (RouteBuilder $builder): void {

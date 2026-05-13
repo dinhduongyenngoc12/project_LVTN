@@ -107,7 +107,7 @@ export function formatPower(power: number | null): string {
         return "--";
     }
 
-    return Math.round(power) + " W";  //lam tron
+    return Math.round(power) + " W";
 }
 
 export function formatDateTime(value: string | null): string {
@@ -123,8 +123,7 @@ export function formatDateTime(value: string | null): string {
     return date.toLocaleString("vi-VN");
 }
 
-
-function normalizeId(value: unknown): number | null {                  //ep kieu ve number
+function normalizeId(value: unknown): number | null {
     return isFiniteNumber(value) ? Number(value) : null;
 }
 
@@ -134,11 +133,11 @@ function normalizeNumber(value: unknown): number | null {
 
 function isFiniteNumber(value: unknown): boolean {
     return typeof value === "number"
-        ? Number.isFinite(value)        //so huu han
-        : typeof value === "string" && value.trim() !== "" && Number.isFinite(Number(value));           
+        ? Number.isFinite(value)
+        : typeof value === "string" && value.trim() !== "" && Number.isFinite(Number(value));
 }
 
-function isLogNewer(nextLog: EnergyLogItem, currentLog: EnergyLogItem): boolean {          //tim log moi hon    
+function isLogNewer(nextLog: EnergyLogItem, currentLog: EnergyLogItem): boolean {
     const nextTimestamp = getLogTimestamp(nextLog);
     const currentTimestamp = getLogTimestamp(currentLog);
 

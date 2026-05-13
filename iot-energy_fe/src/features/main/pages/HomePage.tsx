@@ -20,7 +20,7 @@ const menuItems = [
     { label: "Thiết bị", path: "/devices" },
     { label: "Lịch sử điện năng", path: "/energy-history" },
     { label: "Cảnh báo", path: "/alerts" },
-    { label: "Cài đặt Ngưỡng", path: "/threshold-settings" },
+    { label: "Cài đặt ngưỡng", path: "/threshold-settings" },
 ];
 
 const emptySummary: DashboardSummary = {
@@ -38,17 +38,31 @@ function getMenuItemClass(isActive: boolean) {
     if (isActive) {
         return commonClass + " " + selectedClass;
     }
+
     return commonClass + " " + normalClass;
+}
+
+function normalizeId(value: unknown): number | null {
+    if (typeof value === "number" && Number.isFinite(value)) {
+        return value;
+    }
+
+    if (typeof value === "string" && value.trim() !== "") {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : null;
+    }
+
+    return null;
 }
 
 export default function HomePage() {
     const { handleLogout } = useLogoutForm();
     const { username, email } = useAuthLoginStore();
-    const [user, setUser] = useState<UserProfile | null>(null);         
+    const [user, setUser] = useState<UserProfile | null>(null);
     const [summary, setSummary] = useState<DashboardSummary>(emptySummary);
 
     useEffect(() => {
-        let isMounted = true;                //bien bao ve cho async (trang da roi di, api tra ve muon, co setState)
+        let isMounted = true;
 
         const fetchHomeData = async () => {
             try {
@@ -63,10 +77,28 @@ export default function HomePage() {
                     return;
                 }
 
+                const currentUserId = normalizeId(meData.user?.id);
+                const scopedDevices = (devicesData.devices ?? []).filter(
+                    (device) => currentUserId !== null && normalizeId(device.user_id) === currentUserId,
+                );
+                const deviceIds = new Set(
+                    scopedDevices
+                        .map((device) => normalizeId(device.id ?? device.pk))
+                        .filter((deviceId): deviceId is number => deviceId !== null),
+                );
+                const scopedEnergyLogs = (energyLogsData.energyLogs ?? []).filter((log) => {
+                    const deviceId = normalizeId(log.device_id);
+                    return deviceId !== null && deviceIds.has(deviceId);
+                });
+                const scopedThresholds = (thresholdsData.thresholds ?? []).filter((threshold) => {
+                    const deviceId = normalizeId(threshold.device_id);
+                    return deviceId !== null && deviceIds.has(deviceId);
+                });
+
                 const dashboardDevices = buildDashboardDevices(
-                    devicesData.devices ?? [],
-                    energyLogsData.energyLogs ?? [],
-                    thresholdsData.thresholds ?? [],
+                    scopedDevices,
+                    scopedEnergyLogs,
+                    scopedThresholds,
                 );
 
                 setUser(meData.user ?? null);
@@ -81,7 +113,7 @@ export default function HomePage() {
             }
         };
 
-        fetchHomeData();
+        void fetchHomeData();
 
         return () => {
             isMounted = false;
@@ -124,7 +156,7 @@ export default function HomePage() {
                     <div className="mt-6 rounded-3xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
                         <p className="font-semibold">Dashboard</p>
                         <p className="mt-2 leading-6">
-                            Đang dùng dữ liệu Thiết bị, Nhật ký năng lượng và Ngưỡng tiêu thụ hiện có để tổng hợp cảnh báo
+                            Đang dùng dữ liệu thiết bị, nhật ký năng lượng và ngưỡng tiêu thụ hiện có để tổng hợp cảnh báo
                         </p>
                     </div>
 
@@ -147,7 +179,7 @@ export default function HomePage() {
                                     Trang chủ
                                 </p>
                                 <h2 className="mt-3 max-w-2xl text-3xl font-bold leading-tight sm:text-4xl">
-                                    Theo dõi Điện năng tiêu thụ
+                                    Theo dõi điện năng tiêu thụ
                                 </h2>
                             </div>
                         </div>

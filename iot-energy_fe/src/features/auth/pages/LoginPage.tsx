@@ -24,7 +24,6 @@ export default function LoginPage() {
 
         });
     };
-    console.log("token");
 
     // const clearOtpData = useOtpData((state) => state.clearOtpData);
     // useEffect(() => {

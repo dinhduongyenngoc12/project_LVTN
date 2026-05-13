@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type SyntheticEvent } from "react";
 import { Input } from "../../shared/components/Input";
 import { Button } from "../../shared/components/Button";
 import { useOTPForm, useResendOTPForm } from "../hooks/useAuthForm";
@@ -9,24 +9,10 @@ const illustrationUrl =
 export default function OTPPage() {
     const [otp, setOTP] = useState("");
 
-    // useEffect(() => {
-    //     if (emailState) {
-    //         setOTPData({ email: emailState });
-    //         return;
-    //     }
-
-    //     if (!email) {
-    //         navigate("/login", {
-    //             replace: true,
-    //             state: { message: "Email notfound. You have been redirected to the LOGIN page. Please try again." },
-    //         });
-    //     }
-    // }, []);                              thay = AUTH GUARD tai guard
-
     const { handleOTP, msg, isPending } = useOTPForm();
     const { handleResendOTP, isPending: isResending, msg: resendMsg } = useResendOTPForm();
 
-    const handleSubmit = (event: any) => {
+    const handleSubmit = (event: SyntheticEvent<HTMLFormElement, SubmitEvent>) => {   //event submit cua react
         event.preventDefault();
 
         handleOTP({
@@ -45,9 +31,8 @@ export default function OTPPage() {
                                     Vui lòng nhập mã OTP được nhận từ email vào Hệ thống Quản lý Năng lượng điện tại đây.
                                 </div>
                             </div>
-                            <div>{msg}</div>
-                            <form onSubmit={handleSubmit} className="mx-auto max-w-xs">
 
+                            <form onSubmit={handleSubmit} className="mx-auto max-w-xs">
                                 <Input
                                     type={"otp"}
                                     name={"otp"}
@@ -56,6 +41,18 @@ export default function OTPPage() {
                                 />
 
                                 <Button title="XÁC NHẬN" disabled={isPending} />
+                                {msg && (
+                                    <p
+                                        className={`mt-3 text-center text-sm ${
+                                            msg.includes("THÀNH CÔNG")
+                                                ? "text-green-600"
+                                                : "text-red-500"
+                                        }`}
+                                    >
+                                        {msg}
+                                    </p>
+                                )}
+
                                 <p className="mt-5 text-center text-sm text-gray-600">
                                     Chưa nhận được mã OTP?
                                 </p>
@@ -66,7 +63,6 @@ export default function OTPPage() {
                                     onClick={handleResendOTP}
                                     className="mt-3 border border-green-500 bg-white text-green-600 hover:bg-green-50"
                                     textClassName="text-green-600"
-
                                 />
 
                                 {resendMsg && (
@@ -74,7 +70,6 @@ export default function OTPPage() {
                                         {resendMsg}
                                     </p>
                                 )}
-
                             </form>
                         </div>
                     </div>

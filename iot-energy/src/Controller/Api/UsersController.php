@@ -34,6 +34,20 @@ class UsersController extends AppController
         ]);
     }
 
+    public function index(): void
+    {
+        $this->request->allowMethod(['get']);
+
+        $totalUsers = $this->Users->find()
+            ->where(['Users.role !=' => 'admin'])
+            ->count();
+
+        $this->renderJson([
+            'status' => 'success',
+            'totalUsers' => $totalUsers,
+        ]);
+    }
+
     public function socialLogin(string $provider)
     {
         $providerAction = new AuthSocialProvider();
@@ -62,13 +76,18 @@ class UsersController extends AppController
 
             $this->request->getSession()->write('Auth.User', $user);
             $this->Flash->success(" {$userData['name']}!");
-
             return $this->redirect(['controller' => 'Pages', 'action' => 'home']);
+
+            
         } catch (\Exception $e) {
             $this->Flash->error('ERROR: ' . $e->getMessage());
 
             return $this->redirect(['action' => 'login']);
         }
+
+        //Exception: Tìm trong namespace hiện tại
+        // \ExceptionTìm ở global namespace (root)
+        //use Exception + ExceptionImport vào namespace hiện tại rồi dùng
     }
 
     //LOGIN
@@ -80,7 +99,17 @@ class UsersController extends AppController
         if ($result?->isValid()) {
             $user = $this->Authentication->getIdentity();
 
-            $this->Comon->sendOTP($otp, $user->email);
+            //$this->Comon->sendOTP($otp, $user->email);
+            $mailSent = $this->Comon->sendOTP($otp, $user->email);
+
+            if (!$mailSent) {
+                $this->renderJson([
+                    'status' => 'error',
+                    'message' => 'Không thể gửi OTP qua email, vui lòng thử lại sau',
+                ], 500);
+                return;
+            }
+
 
             $tableOtp = $this->fetchTable('UserOtps');
             $dataOtp = $tableOtp->newEntity([
@@ -94,9 +123,9 @@ class UsersController extends AppController
 
             $this->renderJson([
                 'status' => 'success',
-                'message' => 'OTP',
+                'message' => 'Đã gửi mã OTP về email',
                 'email' => $user->email,
-                'otp' => $otp,
+                // 'otp' => $otp,
             ]);
 
             return;

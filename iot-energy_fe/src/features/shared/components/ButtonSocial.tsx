@@ -5,11 +5,14 @@ const socialButtonPreset = {
         "flex w-full max-w-xs items-center justify-center rounded-lg bg-green-100 py-3 font-bold text-gray-800 shadow-sm transition-all duration-300 ease-in-out hover:shadow focus:outline-none focus:shadow-sm",
     iconWrapperClassName: "rounded-full bg-white p-2",
     textClassName: "ml-4",
+    handleGGLogin: () => {window.location.href = "http://localhost:8765/api/auth/social/google"}
 };
 
 export function ButtonSocial({ text = socialButtonPreset.text }) {
     return (
-        <button type={socialButtonPreset.type} className={socialButtonPreset.className}>
+        <button type={socialButtonPreset.type} 
+                className={socialButtonPreset.className}
+                onClick={socialButtonPreset.handleGGLogin}>
             <div className={socialButtonPreset.iconWrapperClassName}>
                 <svg className="w-4" viewBox="0 0 533.5 544.3" aria-hidden="true">
                     <path

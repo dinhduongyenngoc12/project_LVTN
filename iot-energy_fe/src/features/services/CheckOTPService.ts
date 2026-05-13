@@ -14,6 +14,7 @@ export type CheckOTPResponse = {
     user: {
         username: string;
         email: string;
+        role?: string | null;
     };
 };
 
