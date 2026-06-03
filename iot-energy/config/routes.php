@@ -17,7 +17,7 @@ return function (RouteBuilder $routes): void {
             $builder->connect('/logout', ['controller' => 'Users', 'action' => 'logout'], ['_method' => 'POST']);
             $builder->connect('/me', ['controller' => 'Users', 'action' => 'me'], ['_method' => 'GET']);
             $builder->connect('/refresh', ['controller' => 'Users', 'action' => 'refresh'], ['_method' => 'POST']);
-            $builder->connect('/social/google/callback',
+            $builder->connect('/social/google',
                 ['controller' => 'Users', 'action' => 'socialLogin', 'provider' => 'google'],
                 ['pass' => ['provider']]           
             );
@@ -32,8 +32,9 @@ return function (RouteBuilder $routes): void {
         });
 
         $builder->scope('/energy-logs', ['prefix' => 'Api'], function (RouteBuilder $builder): void {
-            $builder->connect('', ['controller' => 'EnergyLogs', 'action' => 'index'], ['_method' => 'GET']);
-            $builder->connect('/{id}', ['controller' => 'EnergyLogs', 'action' => 'view'], ['pass' => ['id'], '_method' => 'GET']);
+            $builder->get('', ['controller' => 'EnergyLogs', 'action' => 'index']);
+            $builder->post('', ['controller' => 'EnergyLogs', 'action' => 'add']);
+            $builder->get('/{id}', ['controller' => 'EnergyLogs', 'action' => 'view'])->setPass(['id']);
         });
 
         $builder->scope('/thresholds', ['prefix' => 'Api'], function (RouteBuilder $builder): void {

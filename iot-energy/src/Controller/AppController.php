@@ -45,6 +45,12 @@ class AppController extends Controller
 
         //$this->loadComponent('RequestHandler');
         $this->loadComponent('Authentication.Authentication');
+        if (
+            $this->request->is('post')
+            && rtrim($this->request->getUri()->getPath(), '/') === '/api/energy-logs'
+        ) {
+            $this->Authentication->disableIdentityCheck();
+        }
         $this->viewBuilder()->setClassName('Json');
 
         /*

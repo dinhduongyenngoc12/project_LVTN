@@ -108,7 +108,7 @@ implements AuthenticationServiceProviderInterface
                         ->withStatus(200)
                         ->withHeader('Access-Control-Allow-Origin', $origin)
                         ->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS')
-                        ->withHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization')
+                        ->withHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-Device-Key')
                         ->withHeader('Access-Control-Allow-Credentials', 'true');
                 }
 
@@ -117,7 +117,7 @@ implements AuthenticationServiceProviderInterface
                 return $response
                     ->withHeader('Access-Control-Allow-Origin', $origin)
                     ->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS')
-                    ->withHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization')
+                    ->withHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-Device-Key')
                     ->withHeader('Access-Control-Allow-Credentials', 'true');
             })
 

@@ -17,7 +17,7 @@ class TokenService
     protected string $secretKey;
     protected string $algorithm = 'HS256';
     protected int $expiresIn = 86400;
-    protected int $refreshTokenExpiresIn = 86400; //s
+    protected int $refreshTokenExpiresIn = 300; //s
 
     public function __construct()
     {

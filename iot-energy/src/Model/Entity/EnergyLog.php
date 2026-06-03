@@ -29,6 +29,10 @@ class EnergyLog extends Entity
     protected array $_accessible = [
         'device_id' => true,
         'power' => true,
+        'voltage' => true,
+        'current' => true,
+        'energy' => true,
+        'is_valid' => true,
         'created_at' => true,
         'device' => true,
     ];

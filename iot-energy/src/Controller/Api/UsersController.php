@@ -16,7 +16,7 @@ class UsersController extends AppController
     public function initialize(): void
     {
         parent::initialize();
-        $this->loadComponent('Comon');
+        $this->loadComponent('Comon');         //load cpn
     }
 
     public function beforeFilter(EventInterface $event): void
@@ -85,7 +85,7 @@ class UsersController extends AppController
             return $this->redirect(['action' => 'login']);
         }
 
-        //Exception: Tìm trong namespace hiện tại
+        //Exception: Tìm trong namespace hiện tại 
         // \ExceptionTìm ở global namespace (root)
         //use Exception + ExceptionImport vào namespace hiện tại rồi dùng
     }
@@ -112,11 +112,16 @@ class UsersController extends AppController
 
 
             $tableOtp = $this->fetchTable('UserOtps');
+
+            $tableOtp->deleteAll([                 //delete otp cu truoc khi save
+                'email' => $user->email,
+            ]);
+
             $dataOtp = $tableOtp->newEntity([
                 'email' => $user->email,
                 'otp' => $otp,
                 'created_at' => FrozenTime::now(),
-                'expires_at' => FrozenTime::now()->addMinutes(5),      //han otp
+                'expires_at' => FrozenTime::now()->addMinutes(5),
             ]);
 
             $tableOtp->save($dataOtp);
@@ -169,6 +174,8 @@ class UsersController extends AppController
 
             return;
         }
+
+        $userOtpTable->delete($otpRecord);      //delete otp vua dung truoc khi tao token
 
         $dataUser = $this->fetchTable('Users')->find()->where([
             'email' => $email,
@@ -234,6 +241,11 @@ class UsersController extends AppController
         $this->Comon->sendOTP($otp, $email);
 
         $tableOtp = $this->fetchTable('UserOtps');
+
+        $tableOtp->deleteAll([               //delete otp cu truoc khi tao otp moi
+            'email' => $email,
+        ]);
+
         $dataOtp = $tableOtp->newEntity([
             'email' => $email,
             'otp' => $otp,
@@ -247,7 +259,6 @@ class UsersController extends AppController
             'status' => 'success',
             'message' => 'Đã gửi lại mã OTP',
             'email' => $email,
-            'otp' => $otp,
         ]);
     }
 

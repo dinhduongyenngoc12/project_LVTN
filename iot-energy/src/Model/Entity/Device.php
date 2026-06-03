@@ -30,6 +30,8 @@ class Device extends Entity
     protected array $_accessible = [
         'name' => true,
         'user_id' => true,
+        'is_online' => true,
+        'last_seen_at' => true,
         'user' => true,
         'photo_path'=> true,
         'energy_logs' => true,

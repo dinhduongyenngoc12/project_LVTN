@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controller\Api;
 
 use App\Controller\AppController;
+use Cake\Event\EventInterface;
 
 /**
  * Energy Logs API Controller
@@ -12,6 +13,20 @@ use App\Controller\AppController;
  */
 class EnergyLogsController extends AppController
 {
+    public function initialize(): void
+    {
+        parent::initialize();
+
+        $this->Authentication->addUnauthenticatedActions(['add']);
+    }
+
+    public function beforeFilter(EventInterface $event): void
+    {
+        parent::beforeFilter($event);
+
+        $this->Authentication->addUnauthenticatedActions(['add']);
+    }
+
     /**
      * @return void
      */
@@ -87,24 +102,75 @@ class EnergyLogsController extends AppController
     {
         $this->request->allowMethod(['post']);
 
-        $energyLog = $this->EnergyLogs->newEmptyEntity();
-        $energyLog = $this->EnergyLogs->patchEntity($energyLog, $this->request->getData());
-
-        if ($this->EnergyLogs->save($energyLog)) {
+        $apiKey = trim($this->request->getHeaderLine('X-Device-Key'));
+        if ($apiKey === '') {
             $this->renderJson([
-                'status' => 'success',
-                'message' => 'Nhật ký năng lượng đã được tạo thành công.',
-                'energyLog' => $energyLog,
-            ], 201);
+                'status' => 'error',
+                'message' => 'Thiếu API key',
+            ], 401);
 
             return;
         }
 
+        $devicesTable = $this->fetchTable('Devices');
+        $device = $devicesTable->find()
+            ->where(['api_key' => $apiKey])
+            ->first();
+
+        if (!$device) {
+            $this->renderJson([
+                'status' => 'error',
+                'message' => 'API key không hợp lệ',
+            ], 401);
+
+            return;
+        }
+
+        $data = $this->request->getData();
+        $voltage = $this->toNullableFloat($data['voltage'] ?? null);
+        $current = $this->toNullableFloat($data['current'] ?? null);
+        $power = $this->toNullableFloat($data['power'] ?? null);
+        $energy = $this->toNullableFloat($data['energy'] ?? null);
+        $now = date('Y-m-d H:i:s');
+
+        $isValid = $voltage !== null
+            && $voltage > 80
+            && $power !== null
+            && $power >= 0;
+
+        $log = $this->EnergyLogs->newEntity([
+            'device_id' => $device->id,
+            'power' => $power,
+            'voltage' => $voltage,
+            'current' => $current,
+            'energy' => $energy,
+            'is_valid' => $isValid ? 1 : 0,
+            'created_at' => $now,
+        ]);
+        
+        if (!$this->EnergyLogs->save($log)) {
+            $this->renderJson([
+                'status' => 'error',
+                'message' => 'Không lưu được dữ liệu',
+                'errors' => $log->getErrors(),
+            ], 500);
+
+            return;
+        }
+
+        $device = $devicesTable->patchEntity($device, [
+            'is_online' => 1,
+            'last_seen_at' => $now,
+        ]);
+        $devicesTable->save($device);
+
         $this->renderJson([
-            'status' => 'error',
-            'message' => 'Không thể tạo nhật ký năng lượng',
-            'errors' => $energyLog->getErrors(),
-        ], 422);
+            'status' => 'success',
+            'message' => 'Đã nhận dữ liệu từ thiết bị',
+            'relay_status' => 1,
+            'data' => $log,
+        ]);
+        
     }
 
     /**
@@ -166,5 +232,14 @@ class EnergyLogsController extends AppController
         }
 
         return $value;
+    }
+
+    private function toNullableFloat(mixed $value): ?float
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return is_numeric($value) ? (float)$value : null;
     }
 }

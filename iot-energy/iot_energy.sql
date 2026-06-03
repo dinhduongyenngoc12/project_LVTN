@@ -57,6 +57,10 @@ CREATE TABLE IF NOT EXISTS `energy_logs` (
   `id` int NOT NULL AUTO_INCREMENT,
   `device_id` int DEFAULT NULL,
   `power` float DEFAULT NULL,
+   `voltage` float DEFAULT NULL,
+    `current` float DEFAULT NULL,
+    `energy` float DEFAULT NULL,
+     `is_valid` tinyint DEFAULT NULL,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -65,22 +69,22 @@ CREATE TABLE IF NOT EXISTS `energy_logs` (
 -- Đang đổ dữ liệu cho bảng `energy_logs`
 --
 
-INSERT INTO `energy_logs` (`id`, `device_id`, `power`, `created_at`) VALUES
-(1, 1, 750, '2026-04-01 14:54:28'),
-(2, 1, 820, '2026-04-01 14:54:28'),
-(3, 2, 400, '2026-04-01 14:54:28'),
-(4, 2, 520, '2026-04-01 14:54:28'),
-(5, 3, 550, '2026-04-01 14:54:28'),
-(6, 3, 1050, '2026-04-01 14:54:28'),
-(7, 4, 200, '2026-04-01 14:54:28'),
-(8, 4, 1300, '2026-04-01 14:54:28'),
-(9, NULL, NULL, '2026-04-01 10:11:33'),
-(10, 1, NULL, '2026-04-02 08:23:22'),
-(11, 1, NULL, '2026-04-02 08:25:55'),
-(12, 1, NULL, '2026-04-02 08:27:11'),
-(13, 1, NULL, '2026-04-02 08:27:14'),
-(14, 1, NULL, '2026-04-02 08:28:37'),
-(15, 1, NULL, '2026-04-02 08:28:39');
+INSERT INTO `energy_logs` (`id`, `device_id`, `power`,`created_at`,`voltage`,`current`,`energy`, `created_at`) VALUES
+(1, 1, 750, '2026-04-01 14:54:28',NULL,NULL, NULL,NULL),
+(2, 1, 820, '2026-04-01 14:54:28',NULL,NULL, NULL,NULL),
+(3, 2, 400, '2026-04-01 14:54:28',NULL,NULL, NULL,NULL),
+(4, 2, 520, '2026-04-01 14:54:28',NULL,NULL, NULL,NULL),
+(5, 3, 550, '2026-04-01 14:54:28',NULL,NULL, NULL,NULL),
+(6, 3, 1050, '2026-04-01 14:54:28',NULL,NULL, NULL,NULL),
+(7, 4, 200, '2026-04-01 14:54:28',NULL,NULL, NULL,NULL),
+(8, 4, 1300, '2026-04-01 14:54:28',NULL,NULL, NULL,NULL),
+(9, NULL, NULL, '2026-04-01 10:11:33',NULL,NULL, NULL,NULL),
+(10, 1, NULL, '2026-04-02 08:23:22',NULL,NULL, NULL,NULL),
+(11, 1, NULL, '2026-04-02 08:25:55',NULL,NULL, NULL,NULL),
+(12, 1, NULL, '2026-04-02 08:27:11',NULL,NULL, NULL,NULL),
+(13, 1, NULL, '2026-04-02 08:27:14',NULL,NULL, NULL,NULL),
+(14, 1, NULL, '2026-04-02 08:28:37',NULL,NULL, NULL,NULL),
+(15, 1, NULL, '2026-04-02 08:28:39',NULL,NULL, NULL,NULL);
 
 -- --------------------------------------------------------
 

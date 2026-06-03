@@ -33,7 +33,7 @@ class DevicesController extends AppController
         try {
             $keyword = trim((string)($this->request->getData('keyword') ?? $this->request->getQuery('keyword', '')));
            
-            $query = $this->devicesService->getList($keyword)->orderBy(['Devices.id' => 'DESC']);
+            $query = $this->devicesService->getList($keyword)->orderBy(['Devices.id' => 'DESC']); //hien device moi len truoc vi co id lon hon
             
             $devices = $this->paginate($query, [
             'limit' => 10,
@@ -60,7 +60,8 @@ class DevicesController extends AppController
                 'pagingData'=>$pagingData,]);
 
 
-        } catch (\Throwable $th) {
+        } catch (\Throwable $th) {    // \Throwable goc cua PHP, khong phai App\Controller\Api\Throwable.
+
             $this->renderJson([
             'status' => 'error',
             'message' => 'Trang bạn yêu cầu không có dữ liệu hoặc vượt quá số trang hiện có',

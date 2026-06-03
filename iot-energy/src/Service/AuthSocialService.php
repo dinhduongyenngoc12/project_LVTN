@@ -12,7 +12,7 @@ class AuthSocialService
     
     public function execute(string $provider, string $code, string $state, $session): array
     {
-        // Kiểm tra CSRF state
+        //check CSRF state
         $savedState = $session->read('oauth2state');
         $session->delete('oauth2state');
 
