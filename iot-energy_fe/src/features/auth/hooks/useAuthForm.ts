@@ -34,6 +34,11 @@ export function useLoginForm() {
     const otpData = useOtpData();
     const [msg, setMsg] = useState("");
 
+
+    //const handleLogin = (data: { email: string; password: string }) => {
+    //  const email = data.email;
+    //  const password = data.password;
+    //};  destructuring object + khai bao kieu dl
     const handleLogin = (
         { email, password }: { email: string; password: string },
         options?: { onSuccess?: (data: any) => void },
@@ -232,7 +237,7 @@ export function useLogoutForm() {
         clearRefreshToken();
         clearUserIdentify();
 
-        navigate("/login", {
+        navigate("/", {
             replace: true,
         });
     };

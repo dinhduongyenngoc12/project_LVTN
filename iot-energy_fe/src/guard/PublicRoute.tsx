@@ -1,3 +1,4 @@
+import type React from "react";
 import { useAuthLoginStore, useOtpData } from "../app/store/useAuthStore";
 import { Navigate } from "react-router-dom";
 import { getDefaultRouteByRole } from "../app/utils/auth";

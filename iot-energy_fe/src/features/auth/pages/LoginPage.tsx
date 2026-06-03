@@ -42,7 +42,7 @@ export default function LoginPage() {
 
                             <div className="my-12 border-b text-center">
                                 <div className="inline-block translate-y-1/2 bg-white px-2 text-sm font-medium leading-none tracking-wide text-gray-600">
-                                    hoặc Đăng nhập bằng Email cho Hệ thống Quản lý Năng lượng điện.
+                                    hoặc Đăng nhập bằng Email
                                 </div>
                             </div>
 

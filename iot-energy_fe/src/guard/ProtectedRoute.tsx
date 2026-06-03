@@ -1,7 +1,7 @@
+import type React from "react";
 import { Navigate } from "react-router-dom";
 import { useAuthLoginStore, useOtpData } from "../app/store/useAuthStore";
 import { getDefaultRouteByRole, isAdminRole } from "../app/utils/auth";
-
 
 type ProtectedRouteProps = {
     children: React.ReactNode;
@@ -14,7 +14,7 @@ export default function ProtectedRoute({ children, requireAdmin = false }: Prote
 
 
     if (!token && !otpEmail) {
-        return <Navigate to="/login" replace />;
+        return <Navigate to="/" replace />;
     }
     
     if (!token && otpEmail) {

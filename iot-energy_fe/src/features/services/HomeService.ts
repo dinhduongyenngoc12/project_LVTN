@@ -38,10 +38,16 @@ export type EnergyLogItem = {
     id: number;
     device_id?: number | null;
     power?: number | null;
+    voltage?: number | null;
+    current?: number | null;
+    energy?: number | null;
+    is_valid?: boolean | number | null;
     created_at?: string | null;
     device?: {
         id?: number;
         name?: string;
+        is_online?: boolean | number | null;
+        last_seen_at?: string | null;
     };
 };
 

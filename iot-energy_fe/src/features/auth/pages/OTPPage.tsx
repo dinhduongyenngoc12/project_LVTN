@@ -28,7 +28,7 @@ export default function OTPPage() {
                         <div className="mt-8 w-full flex-1">
                             <div className="my-12 border-b text-center">
                                 <div className="inline-block translate-y-1/2 bg-white px-2 text-sm font-medium leading-none tracking-wide text-gray-600">
-                                    Vui lòng nhập mã OTP được nhận từ email vào Hệ thống Quản lý Năng lượng điện tại đây.
+                                    Vui lòng nhập mã OTP được nhận từ Email tại đây
                                 </div>
                             </div>
 

@@ -7,5 +7,5 @@ export function isAdminRole(role: string | null | undefined): boolean {
 }
 
 export function getDefaultRouteByRole(role: string | null | undefined): string {
-    return isAdminRole(role) ? "/admin" : "/";
+    return isAdminRole(role) ? "/admin" : "/dashboard";
 }

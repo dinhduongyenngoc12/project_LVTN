@@ -1,63 +1,122 @@
 import { createBrowserRouter } from "react-router-dom";
 import LoginPage from "../../features/auth/pages/LoginPage";
-import DevicePage from "../../features/main/pages/DevicePage";
 import RegisterPage from "../../features/auth/pages/RegisterPage";
 import OTPPage from "../../features/auth/pages/OTPPage";
+import DashboardPage from "../../features/main/pages/DashboardPage";
+import DevicePage from "../../features/main/pages/DevicePage";
+import ThresholdPage from "../../features/main/pages/ThresholdPage";
+import StatisticsPage from "../../features/main/pages/StatisticsPage";
+import AlertsPage from "../../features/main/pages/AlertsPage";
+import UtilitiesPage from "../../features/main/pages/UtilitiesPage";
+import ProfilePage from "../../features/main/pages/ProfilePage";
 import PublicRoute from "../../guard/PublicRoute";
 import ProtectedRoute from "../../guard/ProtectedRoute";
 import OtpGuard from "../../guard/OtpGuard";
 import AdminDashboardPage from "../../features/admin/pages/AdminDashboardPage";
-import AdminRoute from "./index_role";
+import LandingPage from "../../features/public/pages/LandingPage";
 
 export const router = createBrowserRouter([
   {
     path: "/",
-    element:
+    element: <LandingPage />,
+  },
+
+  {
+    path: "/dashboard",
+    element: (
       <ProtectedRoute>
-        <AdminRoute />
+        <DashboardPage />
       </ProtectedRoute>
+    ),
   },
 
   {
     path: "/admin",
-    element:
+    element: (
       <ProtectedRoute requireAdmin>
         <AdminDashboardPage />
       </ProtectedRoute>
+    ),
   },
 
   {
     path: "/devices",
-    element:
+    element: (
       <ProtectedRoute>
         <DevicePage />
       </ProtectedRoute>
+    ),
   },
 
+  {
+    path: "/thresholds",
+    element: (
+      <ProtectedRoute>
+        <ThresholdPage />
+      </ProtectedRoute>
+    ),
+  },
+
+  {
+    path: "/statistics",
+    element: (
+      <ProtectedRoute>
+        <StatisticsPage />
+      </ProtectedRoute>
+    ),
+  },
+
+  {
+    path: "/alerts",
+    element: (
+      <ProtectedRoute>
+        <AlertsPage />
+      </ProtectedRoute>
+    ),
+  },
+
+  {
+    path: "/utilities",
+    element: (
+      <ProtectedRoute>
+        <UtilitiesPage />
+      </ProtectedRoute>
+    ),
+  },
+
+  {
+    path: "/profile",
+    element: (
+      <ProtectedRoute>
+        <ProfilePage />
+      </ProtectedRoute>
+    ),
+  },
 
   {
     path: "/login",
-    element:
+    element: (
       <PublicRoute>
         <LoginPage />
       </PublicRoute>
+    ),
   },
 
   {
     path: "/register",
-    element:
+    element: (
       <PublicRoute>
         <RegisterPage />
       </PublicRoute>
+    ),
   },
 
   {
     path: "/otp",
-    element:
+    element: (
       <OtpGuard>
         <OTPPage />
       </OtpGuard>
+    ),
   },
-
 ]);
-
