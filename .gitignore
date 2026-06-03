@@ -1,0 +1,17 @@
+# Root Composer files
+/vendor/
+/composer.json
+/composer.lock
+
+# VSCode
+.vscode/
+
+# Node
+node_modules/
+
+# Environment
+.env
+.env.local
+
+# Logs
+*.log
