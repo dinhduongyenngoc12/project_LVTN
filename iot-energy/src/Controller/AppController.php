@@ -107,6 +107,27 @@ class AppController extends Controller
         return is_numeric($userId) ? (int)$userId : null;
     }
 
+    protected function getAuthenticatedUserRole() : ?string
+    {
+        $identity = $this->request->getAttribute('identity') ?? $this->Authentication->getIdentity();
+        $role = $this->readIdentityValue($identity,'role');
+        return is_string($role) ? strtolower(trim($role)): null;
+    }
+
+    protected function requireAdmin(): bool
+    {
+        if ($this->getAuthenticatedUserRole() !== 'admin') {
+            $this->renderJson([
+                'status' => 'error',
+                'message' => 'Bạn không có quyền truy cập chức năng admin',
+            ], 403);
+
+            return false;
+        }
+
+        return true;
+    }
+
     protected function readIdentityValue(mixed $identity, string $field): mixed
     {
         if ($identity === null) {

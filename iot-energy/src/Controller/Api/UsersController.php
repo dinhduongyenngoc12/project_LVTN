@@ -30,13 +30,17 @@ class UsersController extends AppController
             'socialLogin',
             'socialCallback',
             'resendOTP',
-            'refresh',
+            'refresh'
         ]);
     }
 
     public function index(): void
     {
         $this->request->allowMethod(['get']);
+
+        if (!$this->requireAdmin()) {
+            return;
+        }
 
         $totalUsers = $this->Users->find()
             ->where(['Users.role !=' => 'admin'])

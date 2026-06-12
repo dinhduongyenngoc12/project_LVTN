@@ -14,6 +14,7 @@ use Cake\ORM\Entity;
  * @property \Cake\I18n\DateTime|null $created_at
  *
  * @property \App\Model\Entity\Device $device
+ * @property \App\Model\Entity\AlertLog $alert_log
  */
 class EnergyLog extends Entity
 {
@@ -33,7 +34,9 @@ class EnergyLog extends Entity
         'current' => true,
         'energy' => true,
         'is_valid' => true,
+        'recorded_at' => true,
         'created_at' => true,
         'device' => true,
+        'alert_log' => true,
     ];
 }

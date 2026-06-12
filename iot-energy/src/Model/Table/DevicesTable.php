@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace App\Model\Table;
 
-use Cake\ORM\Query\SelectQuery;
 use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
 use Cake\Validation\Validator;
@@ -13,7 +12,10 @@ use Cake\Validation\Validator;
  *
  * @property \App\Model\Table\UsersTable&\Cake\ORM\Association\BelongsTo $Users
  * @property \App\Model\Table\EnergyLogsTable&\Cake\ORM\Association\HasMany $EnergyLogs
- * @property \App\Model\Table\ThresholdsTable&\Cake\ORM\Association\HasMany $Thresholds
+ * @property \App\Model\Table\AlertConfigsTable&\Cake\ORM\Association\HasOne $AlertConfigs
+ * @property \App\Model\Table\HourSummariesTable&\Cake\ORM\Association\HasMany $HourSummaries
+ * @property \App\Model\Table\DailySummariesTable&\Cake\ORM\Association\HasMany $DailySummaries
+ * @property \App\Model\Table\MonthSummariesTable&\Cake\ORM\Association\HasMany $MonthSummaries
  *
  * @method \App\Model\Entity\Device newEmptyEntity()
  * @method \App\Model\Entity\Device newEntity(array $data, array $options = [])
@@ -51,7 +53,16 @@ class DevicesTable extends Table
         $this->hasMany('EnergyLogs', [
             'foreignKey' => 'device_id',
         ]);
-        $this->hasMany('Thresholds', [
+        $this->hasOne('AlertConfigs', [
+            'foreignKey' => 'device_id',
+        ]);
+        $this->hasMany('HourSummaries', [
+            'foreignKey' => 'device_id',
+        ]);
+        $this->hasMany('DailySummaries', [
+            'foreignKey' => 'device_id',
+        ]);
+        $this->hasMany('MonthSummaries', [
             'foreignKey' => 'device_id',
         ]);
     }
@@ -65,18 +76,43 @@ class DevicesTable extends Table
     public function validationDefault(Validator $validator): Validator
     {
         $validator
-            ->scalar('name')
-            ->maxLength('name', 100)
-            ->allowEmptyString('name');
+            ->integer('user_id')
+            ->notEmptyString('user_id');
 
         $validator
-            ->integer('user_id')
-            ->allowEmptyString('user_id');
-        
+            ->scalar('name')
+            ->maxLength('name', 100)
+            ->requirePresence('name', 'create')
+            ->notEmptyString('name');
+
         $validator
-            ->scalar('photo_path')
-            ->maxLength('photo_path', 255)
-            ->allowEmptyString('photo_path');
+            ->scalar('device_type')
+            ->maxLength('device_type', 50)
+            ->requirePresence('device_type', 'create')
+            ->notEmptyString('device_type');
+
+        $validator
+            ->numeric('rated_power')
+            ->greaterThanOrEqual('rated_power', 0)
+            ->allowEmptyString('rated_power');
+
+        $validator
+            ->scalar('api_key')
+            ->maxLength('api_key', 191)
+            ->allowEmptyString('api_key');
+
+        $validator
+            ->scalar('status')
+            ->inList('status', ['pending', 'active', 'disabled'])
+            ->allowEmptyString('status');
+
+        $validator
+            ->dateTime('last_seen_at')
+            ->allowEmptyDateTime('last_seen_at');
+
+        $validator
+            ->dateTime('activated_at')
+            ->allowEmptyDateTime('activated_at');
 
         return $validator;
     }
@@ -90,7 +126,15 @@ class DevicesTable extends Table
      */
     public function buildRules(RulesChecker $rules): RulesChecker
     {
-        $rules->add($rules->existsIn(['user_id'], 'Users'), ['errorField' => 'user_id']);
+        $rules->add(
+            $rules->existsIn(['user_id'], 'Users'),
+            ['errorField' => 'user_id']
+        );
+
+        $rules->add(
+            $rules->isUnique(['api_key'], ['allowMultipleNulls' => true]),
+            ['errorField' => 'api_key']
+        );
 
         return $rules;
     }

@@ -7,8 +7,7 @@ const userMenuItems = [
     { label: "Cấu hình ngưỡng", path: "/thresholds" },
     { label: "Thống kê", path: "/statistics" },
     { label: "Cảnh báo", path: "/alerts" },
-    { label: "Tiện ích", path: "/utilities" },
-    { label: "Thông tin cá nhân", path: "/profile" },
+    { label: "Tiện ích", path: "/utilities" }
 ];
 
 function getMenuItemClass(isActive: boolean) {
@@ -56,12 +55,12 @@ export default function UserLayout({ children }: UserLayoutProps) {
                         ))}
                     </nav>
 
-                    <div className="mt-6 rounded-3xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                    {/* <div className="mt-6 rounded-3xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
                         <p className="font-semibold">Dashboard</p>
                         <p className="mt-2 leading-6">
                             Theo dõi dữ liệu thiết bị, nhật ký năng lượng và ngưỡng tiêu thụ trong hệ thống.
                         </p>
-                    </div>
+                    </div> */}
 
                     <div className="mt-6 flex gap-3 overflow-x-auto pb-2 lg:flex-col lg:overflow-visible lg:pb-0">
                         <button

@@ -2,9 +2,9 @@
 import { axiosClient } from "../lib/axiosClient";
 
 //GET
-export async function getData<T>(url: string, params?: Record<string, unknown>) {
-    const response = await axiosClient.get<T>(url, { params });     //<T> Type Varible
-    return response;
+export async function getData<T>(url: string,params?: Record<string, unknown>,): Promise<T> {
+    const response = await axiosClient.get<T>(url, { params });
+    return response.data;
 }
 
 //POST Generic <T, B = unknown>
@@ -30,13 +30,3 @@ export async function deleteData<T>(url: string): Promise<T> {
     const response = await axiosClient.delete<T>(url);
     return response.data;
 }
-
-// export async function getDevicesApi(): Promise<DevicesResponse> {
-//     const response = await getData<DevicesResponse>("/api/devices");
-//     return response.data;
-// }
-
-// export async function getEnergyLogsApi(): Promise<EnergyLogsResponse> {
-//     const response = await getData<EnergyLogsResponse>("/api/energy-logs");
-//     return response.data;
-// }

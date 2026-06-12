@@ -1,0 +1,391 @@
+//Migration la cong thuc tao ra db chuan tren moi moi truong (version hoa cung code)
+//20260608000000 la version/timestamp de sap xep thu tu chay migration
+//bin/cake bake migration AlignSchemaWithFinalErd
+
+<?php
+declare(strict_types=1);
+
+use Migrations\BaseMigration;
+
+class AlignSchemaWithFinalErd extends BaseMigration
+{
+    public function change(): void
+    {
+        $this->ensureUsers();
+        $this->ensureUserSocialAccounts();
+        $this->ensureRefreshTokens();
+        $this->ensureUserOtps();
+        $this->ensureDevices();
+        $this->ensureEnergyLogs();
+        $this->ensureAlertConfigs();
+        $this->ensureAlertLogs();
+        $this->ensureHourSummaries();
+        $this->ensureDailySummaries();
+        $this->ensureMonthSummaries();
+        $this->ensureElectricityPriceTiers();
+
+        if ($this->isMysql()) {
+            $this->normalizeMysqlTables();
+            $this->addMysqlForeignKeys();
+        }
+    }
+
+    private function ensureUsers(): void
+    {
+        if (!$this->hasTable('users')) {
+            $this->table('users')
+                ->addColumn('username', 'string', ['limit' => 50, 'null' => true])
+                ->addColumn('password', 'string', ['limit' => 255, 'null' => true])
+                ->addColumn('role', 'string', ['limit' => 10, 'null' => true])
+                ->addColumn('email', 'string', ['limit' => 255, 'null' => false])
+                ->create();
+        }
+
+        $this->addIndexIfMissing('users', ['username'], 'idx_users_username');
+        $this->addIndexIfMissing('users', ['email'], 'idx_users_email');
+    }
+
+    private function ensureUserSocialAccounts(): void
+    {
+        if (!$this->hasTable('user_social_accounts')) {
+            $this->table('user_social_accounts')
+                ->addColumn('user_id', 'integer', ['null' => false])
+                ->addColumn('provider', 'string', ['limit' => 50, 'null' => false])
+                ->addColumn('provider_user_id', 'string', ['limit' => 191, 'null' => false])
+                ->addColumn('provider_email', 'string', ['limit' => 255, 'null' => true])
+                ->addColumn('avatar_url', 'text', ['null' => true])
+                ->addColumn('created_at', 'datetime', ['default' => null, 'null' => true])
+                ->addColumn('updated_at', 'datetime', ['default' => null, 'null' => true])
+                ->create();
+        }
+
+        $this->addColumnIfMissing('user_social_accounts', 'created_at', 'datetime', ['default' => null, 'null' => true]);
+        $this->addColumnIfMissing('user_social_accounts', 'updated_at', 'datetime', ['default' => null, 'null' => true]);
+        $this->addUniqueIndexIfSafe('user_social_accounts', ['user_id'], 'uniq_user_social_accounts_user_id');
+        $this->addUniqueIndexIfSafe('user_social_accounts', ['provider', 'provider_user_id'], 'uniq_user_social_accounts_provider_user');
+    }
+
+    private function ensureRefreshTokens(): void
+    {
+        if (!$this->hasTable('refresh_tokens')) {
+            $this->table('refresh_tokens')
+                ->addColumn('user_id', 'integer', ['null' => false])
+                ->addColumn('token', 'string', ['limit' => 512, 'null' => false])
+                ->addColumn('expires_at', 'datetime', ['null' => false])
+                ->addColumn('is_revoked', 'boolean', ['default' => false, 'null' => false])
+                ->addColumn('created_at', 'datetime', ['default' => null, 'null' => true])
+                ->addColumn('last_used_at', 'datetime', ['default' => null, 'null' => true])
+                ->create();
+        }
+
+        $this->addUniqueIndexIfSafe('refresh_tokens', ['token'], 'uq_refresh_tokens_token');
+        $this->addIndexIfMissing('refresh_tokens', ['user_id'], 'idx_refresh_tokens_user_id');
+    }
+
+    private function ensureUserOtps(): void
+    {
+        if (!$this->hasTable('user_otps')) {
+            $this->table('user_otps')
+                ->addColumn('email', 'string', ['limit' => 100, 'null' => false])
+                ->addColumn('otp', 'string', ['limit' => 6, 'null' => false])
+                ->addColumn('created_at', 'datetime', ['null' => false])
+                ->addColumn('expires_at', 'datetime', ['null' => false])
+                ->create();
+        }
+    }
+
+    private function ensureDevices(): void
+    {
+        if (!$this->hasTable('devices')) {
+            $this->table('devices')
+                ->addColumn('name', 'string', ['limit' => 100, 'null' => true])
+                ->addColumn('user_id', 'integer', ['null' => true])
+                ->addColumn('api_key', 'string', ['limit' => 191, 'null' => true])
+                ->addColumn('device_code', 'string', ['limit' => 191, 'null' => true])
+                ->addColumn('is_online', 'boolean', ['default' => false, 'null' => true])
+                ->addColumn('last_seen_at', 'datetime', ['default' => null, 'null' => true])
+                ->addColumn('photo_path', 'string', ['limit' => 255, 'null' => true])
+                ->create();
+        }
+
+        $this->addColumnIfMissing('devices', 'api_key', 'string', ['limit' => 191, 'null' => true]);
+        $this->addColumnIfMissing('devices', 'device_code', 'string', ['limit' => 191, 'null' => true]);
+        $this->addColumnIfMissing('devices', 'is_online', 'boolean', ['default' => false, 'null' => true]);
+        $this->addColumnIfMissing('devices', 'last_seen_at', 'datetime', ['default' => null, 'null' => true]);
+        $this->addColumnIfMissing('devices', 'photo_path', 'string', ['limit' => 255, 'null' => true]);
+
+        $this->addIndexIfMissing('devices', ['user_id'], 'idx_devices_user_id');
+        $this->addUniqueIndexIfSafe('devices', ['api_key'], 'uq_devices_api_key', true);
+        $this->addUniqueIndexIfSafe('devices', ['device_code'], 'uq_devices_device_code', true);
+    }
+
+    private function ensureEnergyLogs(): void
+    {
+        if (!$this->hasTable('energy_logs')) {
+            $this->table('energy_logs')
+                ->addColumn('device_id', 'integer', ['null' => true])
+                ->addColumn('power', 'float', ['null' => true])
+                ->addColumn('voltage', 'float', ['null' => true])
+                ->addColumn('current', 'float', ['null' => true])
+                ->addColumn('energy', 'float', ['null' => true])
+                ->addColumn('is_valid', 'boolean', ['null' => true])
+                ->addColumn('recorded_at', 'datetime', ['default' => null, 'null' => true])
+                ->addColumn('created_at', 'datetime', ['default' => null, 'null' => true])
+                ->create();
+        }
+
+        $this->addColumnIfMissing('energy_logs', 'voltage', 'float', ['null' => true]);
+        $this->addColumnIfMissing('energy_logs', 'current', 'float', ['null' => true]);
+        $this->addColumnIfMissing('energy_logs', 'energy', 'float', ['null' => true]);
+        $this->addColumnIfMissing('energy_logs', 'is_valid', 'boolean', ['null' => true]);
+        $this->addColumnIfMissing('energy_logs', 'recorded_at', 'datetime', ['default' => null, 'null' => true]);
+        $this->addColumnIfMissing('energy_logs', 'created_at', 'datetime', ['default' => null, 'null' => true]);
+
+        $this->addIndexIfMissing('energy_logs', ['device_id'], 'idx_energy_logs_device_id');
+        $this->addIndexIfMissing('energy_logs', ['recorded_at'], 'idx_energy_logs_recorded_at');
+
+        if ($this->isMysql()) {
+            $this->execute('UPDATE energy_logs SET recorded_at = created_at WHERE recorded_at IS NULL AND created_at IS NOT NULL');
+        }
+    }
+
+    private function ensureAlertConfigs(): void
+    {
+        if (!$this->hasTable('alert_configs')) {
+            $this->table('alert_configs')
+                ->addColumn('device_id', 'integer', ['null' => false])
+                ->addColumn('default_threshold', 'float', ['null' => true])
+                ->addColumn('power_threshold', 'float', ['null' => true])
+                ->addColumn('mode', 'string', ['limit' => 50, 'null' => true])
+                ->addColumn('learning_status', 'string', ['limit' => 50, 'null' => true])
+                ->addColumn('learned_at', 'datetime', ['default' => null, 'null' => true])
+                ->addColumn('created_at', 'datetime', ['default' => null, 'null' => true])
+                ->addColumn('last_email_sent_at', 'datetime', ['default' => null, 'null' => true])
+                ->create();
+        }
+
+        $this->addUniqueIndexIfSafe('alert_configs', ['device_id'], 'uq_alert_configs_device_id');
+    }
+
+    private function ensureAlertLogs(): void
+    {
+        if (!$this->hasTable('alert_logs')) {
+            $this->table('alert_logs')
+                ->addColumn('alert_config_id', 'integer', ['null' => false])
+                ->addColumn('energy_log_id', 'integer', ['null' => true])
+                ->addColumn('power_value', 'float', ['null' => true])
+                ->addColumn('email_sent', 'boolean', ['default' => false, 'null' => false])
+                ->addColumn('created_at', 'datetime', ['default' => null, 'null' => true])
+                ->create();
+        }
+
+        $this->addIndexIfMissing('alert_logs', ['alert_config_id'], 'idx_alert_logs_alert_config_id');
+        $this->addUniqueIndexIfSafe('alert_logs', ['energy_log_id'], 'uq_alert_logs_energy_log_id', true);
+    }
+
+    private function ensureHourSummaries(): void
+    {
+        if (!$this->hasTable('hour_summaries')) {
+            $this->table('hour_summaries')
+                ->addColumn('device_id', 'integer', ['null' => false])
+                ->addColumn('hour_at', 'datetime', ['null' => false])
+                ->addColumn('total_energy', 'float', ['null' => true])
+                ->addColumn('avg_power', 'float', ['null' => true])
+                ->addColumn('max_power', 'float', ['null' => true])
+                ->create();
+        }
+
+        $this->addUniqueIndexIfSafe('hour_summaries', ['device_id', 'hour_at'], 'uq_hour_summaries_device_hour');
+    }
+
+    private function ensureDailySummaries(): void
+    {
+        if (!$this->hasTable('daily_summaries')) {
+            $this->table('daily_summaries')
+                ->addColumn('device_id', 'integer', ['null' => false])
+                ->addColumn('date_at', 'date', ['null' => false])
+                ->addColumn('total_energy', 'float', ['null' => true])
+                ->addColumn('avg_power', 'float', ['null' => true])
+                ->addColumn('max_power', 'float', ['null' => true])
+                ->addColumn('alert_count', 'integer', ['default' => 0, 'null' => false])
+                ->create();
+        }
+
+        $this->addUniqueIndexIfSafe('daily_summaries', ['device_id', 'date_at'], 'uq_daily_summaries_device_date');
+    }
+
+    private function ensureMonthSummaries(): void
+    {
+        if (!$this->hasTable('month_summaries')) {
+            $this->table('month_summaries')
+                ->addColumn('device_id', 'integer', ['null' => false])
+                ->addColumn('year', 'integer', ['null' => false])
+                ->addColumn('month', 'integer', ['null' => false])
+                ->addColumn('total_energy', 'float', ['null' => true])
+                ->addColumn('estimated_cost', 'float', ['null' => true])
+                ->addColumn('note', 'text', ['null' => true])
+                ->create();
+        }
+
+        $this->addUniqueIndexIfSafe('month_summaries', ['device_id', 'year', 'month'], 'uq_month_summaries_device_year_month');
+    }
+
+    private function ensureElectricityPriceTiers(): void
+    {
+        if (!$this->hasTable('electricity_price_tiers')) {
+            $this->table('electricity_price_tiers')
+                ->addColumn('tier_order', 'integer', ['null' => false])
+                ->addColumn('from_kwh', 'float', ['null' => false])
+                ->addColumn('to_kwh', 'float', ['null' => true])
+                ->addColumn('price_kwh', 'float', ['null' => false])
+                ->addColumn('effective_from', 'date', ['null' => false])
+                ->create();
+        }
+
+        $this->addIndexIfMissing('electricity_price_tiers', ['effective_from'], 'idx_electricity_price_tiers_effective_from');
+        $this->addUniqueIndexIfSafe('electricity_price_tiers', ['effective_from', 'tier_order'], 'uq_electricity_price_tiers_effective_order');
+    }
+
+    private function addColumnIfMissing(string $tableName, string $column, string $type, array $options): void
+    {
+        $table = $this->table($tableName);
+        if (!$table->hasColumn($column)) {
+            $table->addColumn($column, $type, $options)->update();
+        }
+    }
+
+    private function addIndexIfMissing(string $tableName, array $columns, string $name): void
+    {
+        $table = $this->table($tableName);
+        if (!$table->hasIndexByName($name) && !$table->hasIndex($columns)) {
+            $table->addIndex($columns, ['name' => $name])->update();
+        }
+    }
+
+    private function addUniqueIndexIfSafe(string $tableName, array $columns, string $name, bool $ignoreNulls = false): void
+    {
+        $table = $this->table($tableName);
+        if ($table->hasIndexByName($name)) {
+            return;
+        }
+
+        if ($this->isMysql() && $this->hasDuplicateRows($tableName, $columns, $ignoreNulls)) {
+            return;
+        }
+
+        $table->addIndex($columns, ['unique' => true, 'name' => $name])->update();
+    }
+
+    private function hasDuplicateRows(string $tableName, array $columns, bool $ignoreNulls): bool
+    {
+        $quotedColumns = array_map(fn ($column) => '`' . $column . '`', $columns);
+        $where = '';
+        if ($ignoreNulls) {
+            $where = 'WHERE ' . implode(' AND ', array_map(fn ($column) => '`' . $column . '` IS NOT NULL', $columns));
+        }
+
+        $row = $this->fetchRow(sprintf(
+            'SELECT COUNT(*) AS duplicate_count FROM (
+                SELECT %s FROM `%s` %s GROUP BY %s HAVING COUNT(*) > 1
+            ) duplicates',
+            implode(', ', $quotedColumns),
+            $tableName,
+            $where,
+            implode(', ', $quotedColumns)
+        ));
+
+        return (int)($row['duplicate_count'] ?? 0) > 0;
+    }
+
+    private function normalizeMysqlTables(): void
+    {
+        foreach ([
+            'users',
+            'user_social_accounts',
+            'refresh_tokens',
+            'user_otps',
+            'devices',
+            'energy_logs',
+            'alert_configs',
+            'alert_logs',
+            'hour_summaries',
+            'daily_summaries',
+            'month_summaries',
+            'electricity_price_tiers',
+        ] as $table) {
+            if ($this->hasTable($table)) {
+                $this->execute(sprintf('ALTER TABLE `%s` ENGINE=InnoDB, CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci', $table));
+            }
+        }
+    }
+
+    private function addMysqlForeignKeys(): void
+    {
+        $this->addMysqlForeignKeyIfSafe('user_social_accounts', 'user_id', 'users', 'fk_user_social_accounts_user_id', 'CASCADE');
+        $this->addMysqlForeignKeyIfSafe('refresh_tokens', 'user_id', 'users', 'fk_refresh_tokens_user_id', 'CASCADE');
+        $this->addMysqlForeignKeyIfSafe('devices', 'user_id', 'users', 'fk_devices_user_id', 'SET NULL');
+        $this->addMysqlForeignKeyIfSafe('energy_logs', 'device_id', 'devices', 'fk_energy_logs_device_id', 'CASCADE');
+        $this->addMysqlForeignKeyIfSafe('alert_configs', 'device_id', 'devices', 'fk_alert_configs_device_id', 'CASCADE');
+        $this->addMysqlForeignKeyIfSafe('alert_logs', 'alert_config_id', 'alert_configs', 'fk_alert_logs_alert_config_id', 'CASCADE');
+        $this->addMysqlForeignKeyIfSafe('alert_logs', 'energy_log_id', 'energy_logs', 'fk_alert_logs_energy_log_id', 'SET NULL');
+        $this->addMysqlForeignKeyIfSafe('hour_summaries', 'device_id', 'devices', 'fk_hour_summaries_device_id', 'CASCADE');
+        $this->addMysqlForeignKeyIfSafe('daily_summaries', 'device_id', 'devices', 'fk_daily_summaries_device_id', 'CASCADE');
+        $this->addMysqlForeignKeyIfSafe('month_summaries', 'device_id', 'devices', 'fk_month_summaries_device_id', 'CASCADE');
+    }
+
+    private function addMysqlForeignKeyIfSafe(
+        string $table,
+        string $column,
+        string $referencedTable,
+        string $constraint,
+        string $onDelete
+    ): void {
+        if ($this->hasMysqlConstraint($constraint) || $this->hasOrphanRows($table, $column, $referencedTable)) {
+            return;
+        }
+
+        $this->execute(sprintf(
+            'ALTER TABLE `%s`
+             ADD CONSTRAINT `%s`
+             FOREIGN KEY (`%s`) REFERENCES `%s` (`id`)
+             ON DELETE %s ON UPDATE CASCADE',
+            $table,
+            $constraint,
+            $column,
+            $referencedTable,
+            $onDelete
+        ));
+    }
+
+    private function hasMysqlConstraint(string $constraint): bool
+    {
+        $row = $this->fetchRow(
+            'SELECT COUNT(*) AS constraint_count
+             FROM information_schema.TABLE_CONSTRAINTS
+             WHERE CONSTRAINT_SCHEMA = DATABASE() AND CONSTRAINT_NAME = "' . $constraint . '"'
+        );
+
+        return (int)($row['constraint_count'] ?? 0) > 0;
+    }
+
+    private function hasOrphanRows(string $table, string $column, string $referencedTable): bool
+    {
+        $row = $this->fetchRow(sprintf(
+            'SELECT COUNT(*) AS orphan_count
+             FROM `%s` child
+             LEFT JOIN `%s` parent ON parent.id = child.`%s`
+             WHERE child.`%s` IS NOT NULL AND parent.id IS NULL',
+            $table,
+            $referencedTable,
+            $column,
+            $column
+        ));
+
+        return (int)($row['orphan_count'] ?? 0) > 0;
+    }
+
+    private function isMysql(): bool
+    {
+        return str_contains(get_class($this->getAdapter()), 'Mysql');
+    }
+}

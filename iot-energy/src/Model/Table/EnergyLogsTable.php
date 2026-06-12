@@ -12,6 +12,7 @@ use Cake\Validation\Validator;
  * EnergyLogs Model
  *
  * @property \App\Model\Table\DevicesTable&\Cake\ORM\Association\BelongsTo $Devices
+ * @property \App\Model\Table\AlertLogsTable&\Cake\ORM\Association\HasOne $AlertLogs
  *
  * @method \App\Model\Entity\EnergyLog newEmptyEntity()
  * @method \App\Model\Entity\EnergyLog newEntity(array $data, array $options = [])
@@ -46,6 +47,9 @@ class EnergyLogsTable extends Table
         $this->belongsTo('Devices', [
             'foreignKey' => 'device_id',
         ]);
+        $this->hasOne('AlertLogs', [
+            'foreignKey' => 'energy_log_id',
+        ]);
     }
 
     /**
@@ -67,6 +71,26 @@ class EnergyLogsTable extends Table
         $validator
             ->dateTime('created_at')
             ->allowEmptyDateTime('created_at');
+
+        $validator
+            ->numeric('voltage')
+            ->allowEmptyString('voltage');
+
+        $validator
+            ->numeric('current')
+            ->allowEmptyString('current');
+
+        $validator
+            ->numeric('energy')
+            ->allowEmptyString('energy');
+
+        $validator
+            ->boolean('is_valid')
+            ->allowEmptyString('is_valid');
+
+        $validator
+            ->dateTime('recorded_at')
+            ->allowEmptyDateTime('recorded_at');
 
         return $validator;
     }

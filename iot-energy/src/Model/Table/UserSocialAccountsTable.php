@@ -1,12 +1,11 @@
 <?php
-
 declare(strict_types=1);
 
 namespace App\Model\Table;
 
+use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
 use Cake\Validation\Validator;
-use Cake\ORM\RulesChecker;
 
 class UserSocialAccountsTable extends Table
 {
@@ -42,19 +41,19 @@ class UserSocialAccountsTable extends Table
         $validator
             ->integer('user_id')
             ->requirePresence('user_id', 'create')
-            ->notEmptyString('user_id', 'user_id không được để trống');
+            ->notEmptyString('user_id');
 
         $validator
             ->scalar('provider')
             ->maxLength('provider', 50)
             ->requirePresence('provider', 'create')
-            ->notEmptyString('provider', 'provider không được để trống');
+            ->notEmptyString('provider');
 
         $validator
             ->scalar('provider_user_id')
             ->maxLength('provider_user_id', 191)
             ->requirePresence('provider_user_id', 'create')
-            ->notEmptyString('provider_user_id', 'provider_user_id không được để trống');
+            ->notEmptyString('provider_user_id');
 
         $validator
             ->scalar('provider_email')
@@ -70,24 +69,9 @@ class UserSocialAccountsTable extends Table
 
     public function buildRules(RulesChecker $rules): RulesChecker
     {
-        $rules->add($rules->existsIn(['user_id'], 'Users'), [
-            'errorField' => 'user_id',
-            'message' => 'user_id không tồn tại trong bảng users',
-        ]);
-
-        $rules->add($rules->isUnique(
-            ['provider', 'provider_user_id']
-        ), [
-            'errorField' => 'provider_user_id',
-            'message' => 'Tài khoản social này đã được liên kết',
-        ]);
-
-        $rules->add($rules->isUnique(
-            ['user_id', 'provider']
-        ), [
-            'errorField' => 'provider',
-            'message' => 'User này đã liên kết provider này rồi',
-        ]);
+        $rules->add($rules->existsIn(['user_id'], 'Users'), ['errorField' => 'user_id']);
+        $rules->add($rules->isUnique(['provider', 'provider_user_id']), ['errorField' => 'provider_user_id']);
+        $rules->add($rules->isUnique(['user_id']), ['errorField' => 'user_id']);
 
         return $rules;
     }

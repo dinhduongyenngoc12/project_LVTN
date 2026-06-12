@@ -15,6 +15,8 @@ use Cake\ORM\Entity;
  * @property string|null $role
  *
  * @property \App\Model\Entity\Device[] $devices
+ * @property \App\Model\Entity\RefreshToken[] $refresh_tokens
+ * @property \App\Model\Entity\UserSocialAccount $user_social_account
  */
 class User extends Entity
 {
@@ -41,6 +43,9 @@ class User extends Entity
         'password' => true,
         'role' => true,
         'email' => true,
+        'devices' => true,
+        'refresh_tokens' => true,
+        'user_social_account' => true,
     ];
 
     /**

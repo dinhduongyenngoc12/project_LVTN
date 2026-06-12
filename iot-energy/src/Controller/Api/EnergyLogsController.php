@@ -5,6 +5,7 @@ namespace App\Controller\Api;
 
 use App\Controller\AppController;
 use Cake\Event\EventInterface;
+use Cake\I18n\FrozenTime;
 
 /**
  * Energy Logs API Controller
@@ -241,5 +242,101 @@ class EnergyLogsController extends AppController
         }
 
         return is_numeric($value) ? (float)$value : null;
+    }
+
+    //THONG KE THEO GIO
+    public function hourPower()
+    {
+        $this->request->allowMethod(['get']);
+
+        $today = FrozenTime::now()->format('Y-m-d');
+
+        $energyLogs = $this->fetchTable('EnergyLogs');
+
+        $query = $energyLogs->find();
+
+        $data = $query
+            ->select([
+                'hour' => $query->func()->hour([
+                    'created_at' => 'identifier'       //identifier - CakePHP tu hieu la dinh danh ten cot db
+                ]),
+                'power' => $query->func()->round([
+                    $query->func()->avg('power'),
+                    2
+                ])
+            ])
+
+            // = SELECT
+            // HOUR(created_at) AS hour,
+            // ROUND(AVG(power), 2) AS power
+
+            ->where([
+                'DATE(created_at)' => $today,
+                'is_valid' => 1
+            ])
+            ->groupBy([
+                $query->func()->hour([
+                    'created_at' => 'identifier'
+                ])
+            ])
+            ->orderByAsc('hour')  //Gio tang dan
+            ->enableHydration(false)  //tra chuoi 
+            ->toArray();
+
+        foreach ($data as &$item) {
+            $item['hour'] = str_pad((string)$item['hour'], 2, '0', STR_PAD_LEFT) . ':00';
+            $item['power'] = (float)$item['power'];
+        }
+
+        return $this->response
+            ->withType('application/json')
+            ->withStringBody(json_encode([
+                'success' => true,
+                'data' => $data
+
+            ]));
+    }
+
+    //THONG KE THEO NGAY
+    public function dayPower()
+    {
+        $this->request->allowMethod(['get']);
+
+        $currentMonth = FrozenTime::now()->format('Y-m');
+
+        $energyLogs = $this->fetchTable('EnergyLogs');
+        $query = $energyLogs->find();
+
+        $data = $query
+            ->select([
+                'date' => $query->func()->date(['created_at' => 'identifier']),
+                'power' => $query->func()->round([$query->func()->avg('power'),2])    //lam tron ,00
+            ])
+            // = SELECT
+            // DATE(created_at) AS date,
+            // ROUND(AVG(power), 2) AS power
+            ->where([
+                'DATE_FORMAT(created_at, "%Y-%m") =' => $currentMonth,     
+                'is_valid' => 1
+            ])
+            ->groupBy([
+                $query->func()->date([
+                    'created_at' => 'identifier'
+                ])
+            ])
+            ->orderByAsc('date')   //tang dan
+            ->enableHydration(false)   //tra kq dang thuong thay vi Entity cua CakePHP -> de lay json
+            ->toArray();
+
+        foreach ($data as &$item) {
+            $item['power'] = (float)$item['power'];
+        }
+
+        return $this->response
+            ->withType('application/json')
+            ->withStringBody(json_encode([
+                'success' => true,
+                'data' => $data
+            ]));
     }
 }

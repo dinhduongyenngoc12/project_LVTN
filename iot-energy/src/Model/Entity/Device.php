@@ -9,32 +9,48 @@ use Cake\ORM\Entity;
  * Device Entity
  *
  * @property int $id
- * @property string|null $name
  * @property int|null $user_id
+ * @property string|null $name
+ * @property string|null $device_type
+ * @property float|null $rated_power
+ * @property string|null $api_key
+ * @property string $status
+ * @property \Cake\I18n\DateTime|null $last_seen_at
+ * @property \Cake\I18n\DateTime|null $activated_at
+ * @property \Cake\I18n\DateTime|null $created_at
+ * @property \Cake\I18n\DateTime|null $updated_at
  *
  * @property \App\Model\Entity\User $user
  * @property \App\Model\Entity\EnergyLog[] $energy_logs
- * @property \App\Model\Entity\Threshold[] $thresholds
+ * @property \App\Model\Entity\AlertConfig $alert_config
+ * @property \App\Model\Entity\HourSummary[] $hour_summaries
+ * @property \App\Model\Entity\DailySummary[] $daily_summaries
+ * @property \App\Model\Entity\MonthSummary[] $month_summaries
  */
 class Device extends Entity
 {
     /**
      * Fields that can be mass assigned using newEntity() or patchEntity().
      *
-     * Note that when '*' is set to true, this allows all unspecified fields to
-     * be mass assigned. For security purposes, it is advised to set '*' to false
-     * (or remove it), and explicitly make individual fields accessible as needed.
-     *
      * @var array<string, bool>
      */
     protected array $_accessible = [
-        'name' => true,
         'user_id' => true,
-        'is_online' => true,
+        'name' => true,
+        'device_type' => true,
+        'rated_power' => true,
+        'api_key' => true,
+        'status' => true,
         'last_seen_at' => true,
+        'activated_at' => true,
+        'created_at' => true,
+        'updated_at' => true,
+
         'user' => true,
-        'photo_path'=> true,
         'energy_logs' => true,
-        'thresholds' => true,
+        'alert_config' => true,
+        'hour_summaries' => true,
+        'daily_summaries' => true,
+        'month_summaries' => true,
     ];
 }

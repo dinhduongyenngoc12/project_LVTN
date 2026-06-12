@@ -1,167 +1,288 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import UserLayout from "../../../layouts/UserLayout";
 import {
+    createDeviceApi,
     getDevicesApi,
-    getEnergyLogsApi,
-    getMeApi,
-    getThresholdsApi,
-    type UserProfile,
-} from "../../services/HomeService";
-import {
-    buildDashboardDevices,
-    formatDateTime,
-    formatPower,
-    type DashboardDevice,
-} from "../utils/homeDashboard";
-
-function normalizeId(value: unknown): number | null {
-    if (typeof value === "number" && Number.isFinite(value)) {
-        return value;
-    }
-
-    if (typeof value === "string" && value.trim() !== "") {
-        const parsed = Number(value);
-        return Number.isFinite(parsed) ? parsed : null;
-    }
-
-    return null;
-}
+    updateDeviceApi,
+    type DeviceItem,
+    type DevicePayload
+} from "../../../api/deviceApi";
+import { DEVICE_STATUS_LABELS, formatDeviceDateTime, formatRatedPower, getConnectionStatus } from "../utils/deviceUtils";
+import DeviceFormModal from "../components/DeviceFormModal";
 
 export default function DevicePage() {
-    const [, setUser] = useState<UserProfile | null>(null);
-    const [devices, setDevices] = useState<DashboardDevice[]>([]);
+    const [devices, setDevices] = useState<DeviceItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
-    useEffect(() => {
-        let isMounted = true;
+    const [isFormOpen, setIsFormOpen] = useState(false);
+    const [editingDevice, setEditingDevice] = useState<DeviceItem | null>(null);
+    const [submitting, setSubmitting] = useState(false);
 
-        const fetchDeviceData = async () => {
-            setLoading(true);
-            setError("");
+    const [formData, setFormData] = useState<DevicePayload>({
+        name: "",
+        device_type: "Khác",
+        rated_power: null,
+    });
 
-            try {
-                const [meData, devicesData, energyLogsData, thresholdsData] = await Promise.all([
-                    getMeApi(),
-                    getDevicesApi(),
-                    getEnergyLogsApi(),
-                    getThresholdsApi(),
-                ]);
+    const navigate = useNavigate();
 
-                if (!isMounted) {
-                    return;
-                }
+    //Cac thong ke nho dau trang
+    const totalDevices = devices.length;
 
-                const currentUserId = normalizeId(meData.user?.id);
-                const scopedDevices = (devicesData.devices ?? []).filter(
-                    (device) => currentUserId !== null && normalizeId(device.user_id) === currentUserId,
-                );
-                const deviceIds = new Set(
-                    scopedDevices
-                        .map((device) => normalizeId(device.id ?? device.pk))
-                        .filter((deviceId): deviceId is number => deviceId !== null),
-                );
-                const scopedEnergyLogs = (energyLogsData.energyLogs ?? []).filter((log) => {
-                    const deviceId = normalizeId(log.device_id);
-                    return deviceId !== null && deviceIds.has(deviceId);
-                });
-                const scopedThresholds = (thresholdsData.thresholds ?? []).filter((threshold) => {
-                    const deviceId = normalizeId(threshold.device_id);
-                    return deviceId !== null && deviceIds.has(deviceId);
-                });
+    const activeDevices = devices.filter(
+        (device) => device.status === "active",
+    ).length;
 
-                const dashboardDevices = buildDashboardDevices(
-                    scopedDevices,
-                    scopedEnergyLogs,
-                    scopedThresholds,
-                );
+    const onlineDevices = devices.filter(
+        (device) => getConnectionStatus(device.last_seen_at) === "online",
+    ).length;
 
-                setUser(meData.user ?? null);
-                setDevices(dashboardDevices);
-            } catch {
-                if (!isMounted) {
-                    return;
-                }
+    async function loadDevices() {        //GET /api/devices
+        setLoading(true);
+        setError("");
 
-                setUser(null);
-                setError("Hệ thống không thể tải danh sách thiết bị. Vui lòng thử lại.");
-                setDevices([]);
-            } finally {
-                if (isMounted) {
-                    setLoading(false);
-                }
+        try {
+            const devicesData = await getDevicesApi();
+            setDevices(devicesData.devices ?? []);
+        } catch {
+            setError("Hệ thống không thể tải danh sách thiết bị. Vui lòng thử lại.");
+            setDevices([]);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    function openCreateForm() {
+        setEditingDevice(null);               //them moi
+        setFormData({
+            name: "",
+            device_type: "Khác",
+            rated_power: null,
+        });
+        setIsFormOpen(true);                  //mo modal
+    }
+
+    function openEditForm(device: DeviceItem) {
+        setEditingDevice(device);
+        setFormData({
+            name: device.name,
+            device_type: device.device_type,
+            rated_power: device.rated_power ?? null,
+        });
+        setIsFormOpen(true);
+    }
+
+    function closeForm() {
+        setIsFormOpen(false);
+        setEditingDevice(null);
+        setSubmitting(false);
+    }
+
+    async function handleSubmitDevice() {
+        if (!formData.name.trim()) {
+            setError("Vui lòng nhập tên thiết bị.");
+            return;
+        }
+
+        if (!formData.device_type.trim()) {
+            setError("Vui lòng chọn loại thiết bị.");
+            return;
+        }
+
+        setSubmitting(true);
+        setError("");
+
+        try {
+            const payload: DevicePayload = {
+                name: formData.name.trim(),
+                device_type: formData.device_type.trim(),
+                rated_power:
+                    formData.rated_power === null ||
+                        formData.rated_power === undefined ||
+                        Number.isNaN(Number(formData.rated_power))
+                        ? null
+                        : Number(formData.rated_power),
+            };
+            //gui len api -> http request: vd: await createDeviceApi(payload): POST /api/devices  
+            // -> be: DevicesController::add() -> $devicesService->create(...) -> $devicesTable->save($device) -> mysql
+
+            if (editingDevice) {
+                await updateDeviceApi(editingDevice.id, payload);
+            } else {
+                await createDeviceApi(payload);
             }
-        };
 
-        void fetchDeviceData();
+            await loadDevices();
+            closeForm();
+        } catch {
+            setError("Không thể lưu thiết bị. Vui lòng thử lại.");
+        } finally {
+            setSubmitting(false);
+        }
+    }
 
-        const intervalId = window.setInterval(() => {
-            void fetchDeviceData();
-        }, 10000);
-
-        return () => {
-            isMounted = false;
-            window.clearInterval(intervalId);
-        };
+    useEffect(() => {
+        void loadDevices();
     }, []);
 
+    //page -> modal -> api -> deviceApi -> helper -> deviceUtils
     return (
         <UserLayout>
             <header className="rounded-[32px] border border-white/70 bg-slate-950 px-6 py-6 text-white shadow-2xl shadow-slate-900/10 sm:px-8">
-                <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div>
                         <p className="text-sm font-medium uppercase tracking-[0.26em] text-emerald-300">
                             Thiết bị
                         </p>
-                        <h2 className="mt-3 max-w-2xl text-3xl font-bold leading-tight sm:text-4xl">
-                            Danh sách thiết bị của người dùng
+                        <h2 className="mt-3 text-3xl font-bold leading-tight sm:text-4xl">
+                            Thiết bị của tôi
                         </h2>
+                        <p className="mt-3 max-w-2xl text-sm text-slate-300">
+                            Quản lý các thiết bị điện đang được theo dõi trong hệ thống.
+                        </p>
                     </div>
+
+                    <button
+                        type="button"
+                        onClick={openCreateForm}
+                        className="inline-flex justify-center rounded-2xl bg-emerald-400 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300"
+                    >
+                        Thêm thiết bị
+                    </button>
                 </div>
             </header>
 
+            <section className="mt-6 grid gap-4 md:grid-cols-3">
+                <div className="rounded-3xl border border-white/70 bg-white/90 p-5 shadow-xl shadow-slate-900/5">
+                    <p className="text-sm text-slate-500">Tổng thiết bị</p>
+                    <p className="mt-2 text-2xl font-bold text-slate-900">
+                        {totalDevices}
+                    </p>
+                </div>
+
+                <div className="rounded-3xl border border-white/70 bg-white/90 p-5 shadow-xl shadow-slate-900/5">
+                    <p className="text-sm text-slate-500">Đang hoạt động</p>
+                    <p className="mt-2 text-2xl font-bold text-slate-900">
+                        {activeDevices}
+                    </p>
+                </div>
+
+                <div className="rounded-3xl border border-white/70 bg-white/90 p-5 shadow-xl shadow-slate-900/5">
+                    <p className="text-sm text-slate-500">Đang online</p>
+                    <p className="mt-2 text-2xl font-bold text-slate-900">
+                        {onlineDevices}
+                    </p>
+                </div>
+            </section>
+
             <section className="mt-6 rounded-[32px] border border-white/70 bg-white/90 p-6 shadow-2xl shadow-slate-900/5 backdrop-blur">
                 {loading ? (
-                    <p className="text-sm text-slate-500">Đang tải dữ liệu thiết bị...</p>
+                    <p className="text-sm text-slate-500">
+                        Đang tải dữ liệu thiết bị...
+                    </p>
                 ) : error ? (
                     <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
                         {error}
                     </p>
                 ) : devices.length === 0 ? (
                     <p className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                        Chưa có thiết bị nào thuộc user của phiên này.
+                        Bạn chưa có thiết bị nào. Hãy thêm thiết bị để bắt đầu theo dõi.
                     </p>
                 ) : (
                     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                        {devices.map((device) => (
-                            <div
-                                key={device.id}
-                                className="rounded-3xl border border-slate-200 bg-slate-50 p-4"
-                            >
-                                <h3 className="text-lg font-bold text-slate-900">{device.name}</h3>
-                                <p className="mt-2 text-sm text-slate-500">
-                                    Công suất hiện tại: {formatPower(device.latestPower)}
-                                </p>
-                                <p className="mt-1 text-sm text-slate-500">
-                                    Ngưỡng tối đa: {formatPower(device.maxPower)}
-                                </p>
-                                <p className="mt-1 text-sm text-slate-500">
-                                    Cập nhật lúc: {formatDateTime(device.lastUpdated)}
-                                </p>
-                                <p
-                                    className={`mt-3 inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
-                                        device.isOverThreshold
-                                            ? "bg-rose-100 text-rose-700"
-                                            : "bg-emerald-100 text-emerald-700"
-                                    }`}
+                        {devices.map((device) => {
+                            const connectionStatus = getConnectionStatus(
+                                device.last_seen_at,
+                            );
+                            const isOnline = connectionStatus === "online";
+
+                            return (
+                                <article
+                                    key={device.id}
+                                    className="rounded-3xl border border-slate-200 bg-slate-50 p-5 flex flex-col"
                                 >
-                                    {device.isOverThreshold ? "Vượt ngưỡng" : "Bình thường"}
-                                </p>
-                            </div>
-                        ))}
+                                    <div className="flex items-start justify-between gap-3">
+
+                                        <div className="min-h-[72px]">
+                                            <h3 className="text-lg font-bold text-slate-900">
+                                                {device.name}
+                                            </h3>
+
+                                            <p className="mt-1 text-sm text-slate-500">
+                                                {device.device_type}
+                                            </p>
+                                        </div>
+
+                                        <span
+                                            className={
+                                                "rounded-full px-3 py-1 text-xs font-semibold " +
+                                                (isOnline
+                                                    ? "bg-emerald-100 text-emerald-700"
+                                                    : "bg-slate-200 text-slate-600")
+                                            }
+                                        >
+                                            {isOnline ? "Online" : "Offline"}
+                                        </span>
+                                    </div>
+
+                                    <div className="mt-5 space-y-2 text-sm text-slate-600">
+                                        <p>
+                                            Công suất định mức:{" "}
+                                            <span className="font-semibold text-slate-800">
+                                                {formatRatedPower(device.rated_power)}
+                                            </span>
+                                        </p>
+
+                                        <p>
+                                            Trạng thái:{" "}
+                                            <span className="font-semibold text-slate-800">
+                                                {DEVICE_STATUS_LABELS[device.status]}
+                                            </span>
+                                        </p>
+
+                                        <p>
+                                            Lần gửi cuối:{" "}
+                                            <span className="font-semibold text-slate-800">
+                                                {formatDeviceDateTime(device.last_seen_at)}
+                                            </span>
+                                        </p>
+                                    </div>
+
+                                    <div className="mt-auto flex gap-2 pt-5">
+                                        <button
+                                            type="button"
+                                            onClick={() => openEditForm(device)}
+                                            className="flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-emerald-300 hover:text-emerald-700"
+                                        >
+                                            Sửa
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => navigate("/devices/" + device.id)}
+                                            className="flex-1 rounded-2xl border border-sky-200 bg-white px-4 py-2 text-sm font-semibold text-sky-700 transition hover:bg-sky-50"
+                                        >
+                                            Chi tiết
+                                        </button>
+                                    </div>
+                                </article>
+                            );
+                        })}
                     </div>
                 )}
             </section>
+
+            <DeviceFormModal
+                isOpen={isFormOpen}
+                editingDevice={editingDevice}
+                formData={formData}
+                submitting={submitting}
+                onClose={closeForm}
+                onChange={setFormData}
+                onSubmit={handleSubmitDevice}
+            />
         </UserLayout>
     );
 }

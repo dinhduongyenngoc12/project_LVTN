@@ -17,23 +17,6 @@ export type UsersResponse = {
     totalUsers: number;
 };
 
-export type DeviceItem = {
-    pk?: number;
-    id?: number;
-    name: string;
-    photo_path?: string | null;
-    user_id?: number | null;
-    username?: string | null;
-};
-
-export type DevicesResponse = {
-    status: string;
-    message: string;
-    keyword: string;
-    devices: DeviceItem[];
-    pagingData: Record<string, unknown>;
-};
-
 export type EnergyLogItem = {
     id: number;
     device_id?: number | null;
@@ -46,7 +29,7 @@ export type EnergyLogItem = {
     device?: {
         id?: number;
         name?: string;
-        is_online?: boolean | number | null;
+        status?: "pending" | "active" | "disabled";
         last_seen_at?: string | null;
     };
 };
@@ -61,38 +44,36 @@ export type EnergyLogsResponse = {
     energyLogs: EnergyLogItem[];
 };
 
-export type ThresholdItem = {
+export type AlertConfigItem = {
     id: number;
     device_id?: number | null;
+    default_threshold?: number | null;
+    power_threshold?: number | null;
+    mode?: string | null;
+    learning_status?: string | null;
     max_power?: number | null;
 };
 
-export type ThresholdsResponse = {
+export type AlertConfigsResponse = {
     status: string;
-    thresholds: ThresholdItem[];
+    alertConfigs?: AlertConfigItem[];
+    thresholds?: AlertConfigItem[];
 };
 
 export async function getMeApi(): Promise<MeResponse> {
-    const response = await getData<MeResponse>("/api/auth/me");
-    return response.data;
+    return await getData<MeResponse>("/api/auth/me");
 }
 
 export async function getUsersApi(): Promise<UsersResponse> {
-    const response = await getData<UsersResponse>("/api/users");
-    return response.data;
+    return await getData<UsersResponse>("/api/users");
 }
 
-export async function getDevicesApi(): Promise<DevicesResponse> {
-    const response = await getData<DevicesResponse>("/api/devices");
-    return response.data;
+export async function getEnergyLogsApi(
+    params?: Record<string, unknown>,
+): Promise<EnergyLogsResponse> {
+    return await getData<EnergyLogsResponse>("/api/energy-logs", params);
 }
 
-export async function getEnergyLogsApi(params?: Record<string, unknown>): Promise<EnergyLogsResponse> {
-    const response = await getData<EnergyLogsResponse>("/api/energy-logs", params);
-    return response.data;
-}
-
-export async function getThresholdsApi(): Promise<ThresholdsResponse> {
-    const response = await getData<ThresholdsResponse>("/api/thresholds");
-    return response.data;
+export async function getAlertConfigsApi(): Promise<AlertConfigsResponse> {
+    return await getData<AlertConfigsResponse>("/api/alert-configs");
 }

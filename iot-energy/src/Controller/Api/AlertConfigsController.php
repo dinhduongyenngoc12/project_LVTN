@@ -5,7 +5,7 @@ namespace App\Controller\Api;
 
 use App\Controller\AppController;
 
-class ThresholdsController extends AppController
+class AlertConfigsController extends AppController
 {
     public function index(): void
     {
@@ -13,9 +13,9 @@ class ThresholdsController extends AppController
 
         $userId = $this->getAuthenticatedUserId();
 
-        $query = $this->Thresholds->find()
+        $query = $this->AlertConfigs->find()
             ->contain(['Devices'])
-            ->orderBy(['Thresholds.id' => 'DESC']);
+            ->orderBy(['AlertConfigs.id' => 'DESC']);
 
         if ($userId !== null) {
             $query->innerJoinWith('Devices', function ($q) use ($userId) {
@@ -23,11 +23,12 @@ class ThresholdsController extends AppController
             });
         }
 
-        $thresholds = $query->all()->toList();
+        $alertConfigs = $query->all()->toList();
 
         $this->renderJson([
             'status' => 'success',
-            'thresholds' => $thresholds,
+            'alertConfigs' => $alertConfigs,
+            'thresholds' => $alertConfigs,
         ]);
     }
 
@@ -36,9 +37,9 @@ class ThresholdsController extends AppController
         $this->request->allowMethod(['get']);
 
         $userId = $this->getAuthenticatedUserId();
-        $query = $this->Thresholds->find()
+        $query = $this->AlertConfigs->find()
             ->contain(['Devices'])
-            ->where(['Thresholds.id' => $id]);
+            ->where(['AlertConfigs.id' => $id]);
 
         if ($userId !== null) {
             $query->innerJoinWith('Devices', function ($q) use ($userId) {
@@ -46,11 +47,11 @@ class ThresholdsController extends AppController
             });
         }
 
-        $threshold = $query->first();
-        if (!$threshold) {
+        $alertConfig = $query->first();
+        if (!$alertConfig) {
             $this->renderJson([
                 'status' => 'error',
-                'message' => 'Không tìm thấy ngưỡng cảnh báo !',
+                'message' => 'Khong tim thay cau hinh canh bao.',
             ], 404);
 
             return;
@@ -58,7 +59,8 @@ class ThresholdsController extends AppController
 
         $this->renderJson([
             'status' => 'success',
-            'threshold' => $threshold,
+            'alertConfig' => $alertConfig,
+            'threshold' => $alertConfig,
         ]);
     }
 
@@ -67,9 +69,9 @@ class ThresholdsController extends AppController
         $this->request->allowMethod(['patch', 'put']);
 
         $userId = $this->getAuthenticatedUserId();
-        $query = $this->Thresholds->find()
+        $query = $this->AlertConfigs->find()
             ->contain(['Devices'])
-            ->where(['Thresholds.id' => $id]);
+            ->where(['AlertConfigs.id' => $id]);
 
         if ($userId !== null) {
             $query->innerJoinWith('Devices', function ($q) use ($userId) {
@@ -77,22 +79,27 @@ class ThresholdsController extends AppController
             });
         }
 
-        $threshold = $query->first();
-        if (!$threshold) {
+        $alertConfig = $query->first();
+        if (!$alertConfig) {
             $this->renderJson([
                 'status' => 'error',
-                'message' => 'Không tìm thấy ngưỡng cảnh báo !',
+                'message' => 'Khong tim thay cau hinh canh bao.',
             ], 404);
 
             return;
         }
 
-        $threshold = $this->Thresholds->patchEntity($threshold, $this->request->getData());
-        if ($this->Thresholds->save($threshold)) {
+        $alertConfig = $this->AlertConfigs->patchEntity(
+            $alertConfig,
+            $this->normalizeAlertConfigPayload($this->request->getData())
+        );
+
+        if ($this->AlertConfigs->save($alertConfig)) {
             $this->renderJson([
                 'status' => 'success',
-                'message' => 'Cập nhật ngưỡng thành công ',
-                'threshold' => $threshold,
+                'message' => 'Cap nhat cau hinh canh bao thanh cong.',
+                'alertConfig' => $alertConfig,
+                'threshold' => $alertConfig,
             ]);
 
             return;
@@ -100,8 +107,19 @@ class ThresholdsController extends AppController
 
         $this->renderJson([
             'status' => 'error',
-            'message' => 'Không thể cập nhật ngưỡng.',
-            'errors' => $threshold->getErrors(),
+            'message' => 'Khong the cap nhat cau hinh canh bao.',
+            'errors' => $alertConfig->getErrors(),
         ], 422);
+    }
+
+    private function normalizeAlertConfigPayload(array $data): array
+    {
+        if (array_key_exists('max_power', $data)) {
+            $data['power_threshold'] = $data['power_threshold'] ?? $data['max_power'];
+            $data['default_threshold'] = $data['default_threshold'] ?? $data['max_power'];
+            unset($data['max_power']);
+        }
+
+        return $data;
     }
 }

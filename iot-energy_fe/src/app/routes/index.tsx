@@ -8,12 +8,12 @@ import ThresholdPage from "../../features/main/pages/ThresholdPage";
 import StatisticsPage from "../../features/main/pages/StatisticsPage";
 import AlertsPage from "../../features/main/pages/AlertsPage";
 import UtilitiesPage from "../../features/main/pages/UtilitiesPage";
-import ProfilePage from "../../features/main/pages/ProfilePage";
 import PublicRoute from "../../guard/PublicRoute";
 import ProtectedRoute from "../../guard/ProtectedRoute";
 import OtpGuard from "../../guard/OtpGuard";
 import AdminDashboardPage from "../../features/admin/pages/AdminDashboardPage";
 import LandingPage from "../../features/public/pages/LandingPage";
+import DeviceDetailPage from "../../features/main/pages/DeviceDetailPage";
 
 export const router = createBrowserRouter([
   {
@@ -85,15 +85,6 @@ export const router = createBrowserRouter([
   },
 
   {
-    path: "/profile",
-    element: (
-      <ProtectedRoute>
-        <ProfilePage />
-      </ProtectedRoute>
-    ),
-  },
-
-  {
     path: "/login",
     element: (
       <PublicRoute>
@@ -119,4 +110,8 @@ export const router = createBrowserRouter([
       </OtpGuard>
     ),
   },
+  {
+    path: "/devices/:id",
+    element: <DeviceDetailPage />,
+  }
 ]);

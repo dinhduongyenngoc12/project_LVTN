@@ -28,19 +28,31 @@ return function (RouteBuilder $routes): void {
         });
 
         $builder->scope('/devices', ['prefix' => 'Api'], function (RouteBuilder $builder): void {
-            $builder->connect('', ['controller' => 'Devices', 'action' => 'index'], ['_method' => 'GET']);
+        $builder->get('', ['controller' => 'Devices', 'action' => 'index']);
+        $builder->post('', ['controller' => 'Devices', 'action' => 'add']);
+        $builder->get('/{id}', ['controller' => 'Devices', 'action' => 'view'])->setPass(['id']);
+        $builder->put('/{id}', ['controller' => 'Devices', 'action' => 'edit'])->setPass(['id']);
+        $builder->patch('/{id}', ['controller' => 'Devices', 'action' => 'edit'])->setPass(['id']);
+        $builder->delete('/{id}', ['controller' => 'Devices', 'action' => 'delete'])->setPass(['id']);
+
+        $builder->post('/{id}/activate', ['controller' => 'Devices', 'action' => 'activate'])->setPass(['id']);
+        $builder->post('/{id}/disable', ['controller' => 'Devices', 'action' => 'disable'])->setPass(['id']);
         });
 
         $builder->scope('/energy-logs', ['prefix' => 'Api'], function (RouteBuilder $builder): void {
             $builder->get('', ['controller' => 'EnergyLogs', 'action' => 'index']);
             $builder->post('', ['controller' => 'EnergyLogs', 'action' => 'add']);
+            $builder->get('/hour-power', ['controller' => 'EnergyLogs','action' => 'hourPower']);
+            $builder->get('/day-energy', ['controller' => 'EnergyLogs','action' => 'dayPower']);
+            $builder->get('/month-power', ['controller' => 'EnergyLogs','action' => 'monthPower']);
             $builder->get('/{id}', ['controller' => 'EnergyLogs', 'action' => 'view'])->setPass(['id']);
+
         });
 
-        $builder->scope('/thresholds', ['prefix' => 'Api'], function (RouteBuilder $builder): void {
-            $builder->connect('', ['controller' => 'Thresholds', 'action' => 'index'], ['_method' => 'GET']);
-            $builder->connect('/{id}', ['controller' => 'Thresholds', 'action' => 'view'], ['pass' => ['id'], '_method' => 'GET']);
-            $builder->connect('/{id}', ['controller' => 'Thresholds', 'action' => 'edit'], ['pass' => ['id'], '_method' => ['PUT', 'PATCH']]);
+        $builder->scope('/alert-configs', ['prefix' => 'Api'], function (RouteBuilder $builder): void {
+            $builder->connect('', ['controller' => 'AlertConfigs', 'action' => 'index'], ['_method' => 'GET']);
+            $builder->connect('/{id}', ['controller' => 'AlertConfigs', 'action' => 'view'], ['pass' => ['id'], '_method' => 'GET']);
+            $builder->connect('/{id}', ['controller' => 'AlertConfigs', 'action' => 'edit'], ['pass' => ['id'], '_method' => ['PUT', 'PATCH']]);
         });
 
         $builder->fallbacks();

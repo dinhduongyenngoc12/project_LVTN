@@ -1,0 +1,77 @@
+<?php
+declare(strict_types=1);
+
+namespace App\Model\Table;
+
+use Cake\ORM\RulesChecker;
+use Cake\ORM\Table;
+use Cake\Validation\Validator;
+
+class AlertConfigsTable extends Table
+{
+    public function initialize(array $config): void
+    {
+        parent::initialize($config);
+
+        $this->setTable('alert_configs');
+        $this->setDisplayField('id');
+        $this->setPrimaryKey('id');
+
+        $this->belongsTo('Devices', [
+            'foreignKey' => 'device_id',
+            'joinType' => 'INNER',
+        ]);
+
+        $this->hasMany('AlertLogs', [
+            'foreignKey' => 'alert_config_id',
+        ]);
+    }
+
+    public function validationDefault(Validator $validator): Validator
+    {
+        $validator
+            ->integer('device_id')
+            ->requirePresence('device_id', 'create')
+            ->notEmptyString('device_id');
+
+        $validator
+            ->numeric('default_threshold')
+            ->allowEmptyString('default_threshold');
+
+        $validator
+            ->numeric('power_threshold')
+            ->allowEmptyString('power_threshold');
+
+        $validator
+            ->scalar('mode')
+            ->maxLength('mode', 50)
+            ->allowEmptyString('mode');
+
+        $validator
+            ->scalar('learning_status')
+            ->maxLength('learning_status', 50)
+            ->allowEmptyString('learning_status');
+
+        $validator
+            ->dateTime('learned_at')
+            ->allowEmptyDateTime('learned_at');
+
+        $validator
+            ->dateTime('created_at')
+            ->allowEmptyDateTime('created_at');
+
+        $validator
+            ->dateTime('last_email_sent_at')
+            ->allowEmptyDateTime('last_email_sent_at');
+
+        return $validator;
+    }
+
+    public function buildRules(RulesChecker $rules): RulesChecker
+    {
+        $rules->add($rules->existsIn(['device_id'], 'Devices'), ['errorField' => 'device_id']);
+        $rules->add($rules->isUnique(['device_id']), ['errorField' => 'device_id']);
+
+        return $rules;
+    }
+}
